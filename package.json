@@ -1,15 +1,13 @@
 {
-    "name": "pixi-typescript-boilerplate",
-    "version": "1.0.0",
-    "description": "pixi.js typescript boilerplate webpack",
+    "name": "@flexcompute/photonforge-view-tool",
+    "version": "1.0.1",
+    "description": "photonforge-view-tool",
     "browserslist": "> 0.25%, not dead",
     "scripts": {
         "webpack": "webpack",
         "webpack-dev-server": "webpack-dev-server",
         "type-check": "tsc --noEmit",
         "type-check:watch": "npm run type-check -- -w",
-        "prebuild": "npm run clean",
-        "clean": "npx rimraf dist",
         "build": "npm run type-check && npm run webpack -- --env mode=production",
         "start": "npm-run-all --parallel type-check:watch dev",
         "dev": "npm run webpack-dev-server -- --env mode=development",
@@ -22,11 +20,18 @@
         "code-style-check": "npm run lint-check && npm run prettier:check",
         "prepare": "husky install"
     },
-    "author": "jkanchelov",
+    "author": "jinge",
     "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/flexcompute/photonforge-view-tool.git"
+    },
+    "files": [
+        "dist",
+        "README.md"
+    ],
     "dependencies": {
         "core-js": "^3.26.0",
-        "pixi-spine": "^3.0.16",
         "pixi.js": "^6.5.8",
         "regenerator-runtime": "^0.13.10"
     },
@@ -34,10 +39,10 @@
         "@swc/core": "^1.3.11",
         "@types/jest": "^29.2.0",
         "@types/node": "^18.11.7",
-        "@types/offscreencanvas": "^2019.7.0",
         "@typescript-eslint/eslint-plugin": "^5.41.0",
         "@typescript-eslint/parser": "^5.41.0",
         "browserslist": "^4.21.4",
+        "clean-webpack-plugin": "^4.0.0",
         "copy-webpack-plugin": "^11.0.0",
         "css-loader": "^6.7.1",
         "css-minimizer-webpack-plugin": "^4.2.2",
@@ -55,7 +60,6 @@
         "npm-run-all": "^4.1.5",
         "prettier": "^2.7.1",
         "pretty-quick": "^3.1.3",
-        "rimraf": "^3.0.2",
         "swc-loader": "^0.2.3",
         "terser-webpack-plugin": "^5.3.6",
         "ts-jest": "^29.0.3",

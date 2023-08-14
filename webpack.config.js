@@ -8,6 +8,7 @@ const merge = require("webpack-merge").merge;
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const CopyPlugin = require("copy-webpack-plugin");
+const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 
 module.exports = (env) => {
     const config = {
@@ -35,13 +36,16 @@ module.exports = (env) => {
             ],
         },
         optimization: {
-            splitChunks: {
-                chunks: "all",
-            },
+            // splitChunks: {
+            //     chunks: "all",
+            // },
         },
 
         plugins: [
-            new HtmlWebpackPlugin(),
+            new HtmlWebpackPlugin({
+                template: "./src/index.html",
+                inject: false,
+            }),
             new CopyPlugin({
                 patterns: [
                     {
@@ -62,6 +66,7 @@ module.exports = (env) => {
                     },
                 ],
             }),
+            new CleanWebpackPlugin(),
         ],
     };
     const envConfig = require(path.resolve(__dirname, `./webpack.${env.mode}.js`))(env);

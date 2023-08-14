@@ -35,19 +35,16 @@ module.exports = (env) => {
 
         output: {
             path: path.resolve(__dirname, "dist"),
-            filename: "game.[contenthash].js",
+            filename: `photonForge-view.${new Date().getTime()}.js`,
         },
 
         optimization: {
             minimize: true,
             minimizer: [
                 // For webpack@5 you can use the `...` syntax to extend existing minimizers (i.e. `terser-webpack-plugin`), uncomment the next line
-                `...`,
                 new TerserPlugin({
                     minify: TerserPlugin.swcMinify,
-                    // `terserOptions` options will be passed to `swc` (`@swc/core`)
-                    // Link to options - https://swc.rs/docs/config-js-minify
-                    terserOptions: {},
+                    extractComments: false,
                 }),
                 new CssMinimizerPlugin(),
             ],
