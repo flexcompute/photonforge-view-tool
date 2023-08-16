@@ -36,6 +36,8 @@ module.exports = (env) => {
         output: {
             path: path.resolve(__dirname, "dist"),
             filename: `photonForge-view.${new Date().getTime()}.js`,
+            library: "PhotonForgeViewTool",
+            libraryExport: "default",
         },
 
         optimization: {
@@ -54,18 +56,15 @@ module.exports = (env) => {
             new MiniCssExtractPlugin({
                 filename: "[name].[contenthash].css",
             }),
-
             new webpack.DefinePlugin({
                 VERSION: JSON.stringify(pkg.version + "r"),
             }),
-
             new ESLintPlugin({
                 emitError: true,
                 emitWarning: true,
                 failOnError: true,
                 failOnWarning: true,
             }),
-
             new webpack.ProgressPlugin(),
         ],
     };

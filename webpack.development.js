@@ -11,13 +11,11 @@ const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, "package.json"), "ut
 module.exports = (env) => {
     const devConfig = {
         mode: env.mode,
-
         devtool: "inline-source-map",
-
         devServer: {
             open: true,
+            allowedHosts: "all",
         },
-
         module: {
             rules: [
                 {
@@ -39,15 +37,15 @@ module.exports = (env) => {
         output: {
             path: path.resolve(__dirname, "dist"),
             filename: "[name].js",
+            library: "PhotonForgeViewTool",
+            libraryExport: "default",
         },
 
         plugins: [
             new MiniCssExtractPlugin({
                 filename: "[name].css",
             }),
-
             new ESLintPlugin(),
-
             new webpack.DefinePlugin({
                 VERSION: JSON.stringify(pkg.version + "dev"),
             }),

@@ -1,74 +1,67 @@
-import { Application, Loader, Texture, AnimatedSprite } from "pixi.js";
+import { Application, Graphics } from "pixi.js";
 // import "./style.css";
 
-declare const VERSION: string;
+// (window as any).aa = 222;
 
-const gameWidth = 800;
-const gameHeight = 600;
+class PhotonForgeViewTool {
+    schematicApp: Application;
+    layoutApp: Application;
+    constructor(param: { schematicContainerId: string; layoutContainerId: string }) {
+        console.log("view tool init OK");
+        const container0Dom = document.getElementById(param.schematicContainerId)!;
+        const container1Dom = document.getElementById(param.layoutContainerId)!;
+        const { clientWidth: w, clientHeight: h } = container1Dom;
 
-console.log(`Welcome from pixi-typescript-boilerplate ${VERSION}`);
-
-(window as any).aa = 222;
-const app = new Application({
-    backgroundColor: 0xd3d3d3,
-    width: gameWidth,
-    height: gameHeight,
-});
-
-window.onload = async (): Promise<void> => {
-    await loadGameAssets();
-
-    document.body.appendChild(app.view);
-
-    resizeCanvas();
-
-    const birdFromSprite = getBird();
-    birdFromSprite.anchor.set(0.5, 0.5);
-    birdFromSprite.position.set(gameWidth / 2, gameHeight / 2);
-
-    app.stage.addChild(birdFromSprite);
-    app.stage.interactive = true;
-};
-
-async function loadGameAssets(): Promise<void> {
-    return new Promise((res, rej) => {
-        const loader = Loader.shared;
-        loader.add("rabbit", "./assets/simpleSpriteSheet.json");
-        loader.onComplete.once(() => {
-            res();
+        this.schematicApp = new Application({
+            backgroundColor: 0xf2f3f4,
+            width: w,
+            height: h,
         });
+        container0Dom.appendChild(this.schematicApp.view);
 
-        loader.onError.once(() => {
-            rej();
+        this.layoutApp = new Application({
+            backgroundColor: 0xf2f3f4,
+            width: w,
+            height: h,
         });
+        container1Dom.appendChild(this.layoutApp.view);
 
-        loader.load();
-    });
+        this.resizeCanvas();
+    }
+
+    public test() {
+        const { width: w1, height: h1 } = this.layoutApp.view;
+        const node = new Graphics();
+        node.beginFill(0xdeff49, 1);
+        node.lineStyle(2, 0x22ff00, 1);
+        node.drawRect(w1 / 2 - 230, h1 / 2 - 10, 240, 90);
+        node.drawRect(w1 / 2 + 230, h1 / 2 + 10, 240, 90);
+        node.endFill();
+        node.moveTo(w1 / 2 + 10, h1 / 2 + 45);
+        node.lineTo(w1 / 2 + 230, h1 / 2 + 55);
+        this.schematicApp.stage.addChild(node);
+
+        const { width: w, height: h } = this.layoutApp.view;
+        const testG = new Graphics();
+        testG.beginFill(0xdeff49, 1);
+        testG.lineStyle(2, 0x22ff00, 1);
+        testG.drawCircle(w / 2, h / 2, 100);
+        testG.drawRect(w / 2 - 120, h / 2 - 130, 240, 20);
+        testG.drawRect(w / 2 - 120, h / 2 + 110, 240, 20);
+        testG.endFill();
+        this.layoutApp.stage.addChild(testG);
+    }
+
+    private resizeCanvas(): void {
+        const resize = () => {
+            this.schematicApp.renderer.resize(window.innerWidth, window.innerHeight);
+            this.layoutApp.renderer.resize(window.innerWidth, window.innerHeight);
+        };
+
+        resize();
+
+        window.addEventListener("resize", resize);
+    }
 }
-
-function resizeCanvas(): void {
-    const resize = () => {
-        app.renderer.resize(window.innerWidth, window.innerHeight);
-        app.stage.scale.x = window.innerWidth / gameWidth;
-        app.stage.scale.y = window.innerHeight / gameHeight;
-    };
-
-    resize();
-
-    window.addEventListener("resize", resize);
-}
-
-function getBird(): AnimatedSprite {
-    const bird = new AnimatedSprite([
-        Texture.from("birdUp.png"),
-        Texture.from("birdMiddle.png"),
-        Texture.from("birdDown.png"),
-    ]);
-
-    bird.loop = true;
-    bird.animationSpeed = 0.1;
-    bird.play();
-    bird.scale.set(3);
-
-    return bird;
-}
+export default PhotonForgeViewTool;
+// (window as any).PhotonForgeViewTool = PhotonForgeViewTool;

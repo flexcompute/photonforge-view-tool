@@ -4,11 +4,17 @@
         <meta charset="utf-8" />
         <title>Webpack Appfewfewfew</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <script src="main.js"></script>
+        <!-- <script src="main.js"></script> -->
     </head>
     <body>
+        <div id="node-container"></div>
+        <div id="canvas-container"></div>
         <script>
-            console.log(window.aa);
+            const testTool = new PhotonForgeViewTool({
+                schematicContainerId: "node-container",
+                layoutContainerId: "canvas-container",
+            });
+            testTool.test();
         </script>
     </body>
 </html>

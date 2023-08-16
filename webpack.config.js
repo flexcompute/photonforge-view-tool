@@ -13,7 +13,6 @@ const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 module.exports = (env) => {
     const config = {
         entry: "./src/index.ts",
-
         resolve: {
             extensions: [".ts", ".tsx", ".js", ".json"],
             // alias: {
@@ -44,23 +43,20 @@ module.exports = (env) => {
         plugins: [
             new HtmlWebpackPlugin({
                 template: "./src/index.html",
-                inject: false,
+                inject: "head",
+                scriptLoading: "blocking",
             }),
             new CopyPlugin({
                 patterns: [
                     {
                         from: "assets/**",
-
                         // if there are nested subdirectories , keep the hierarchy
                         to({ context, absoluteFilename }) {
                             const assetsPath = path.resolve(__dirname, "assets");
-
                             if (!absoluteFilename) {
                                 throw Error();
                             }
-
                             const endPath = absoluteFilename.slice(assetsPath.length);
-
                             return Promise.resolve(`assets/${endPath}`);
                         },
                     },
