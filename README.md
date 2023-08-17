@@ -2,11 +2,10 @@
 
 ## Highlights
 
--   🔰 - change hosts config of your computer system for CSP script redirect.
--   🚀 - open dev url and use header editor to redirect the main.js url to local server url
--   🛠 - and now you can develop this project locally without starting the heavy main tidy3d project
+-   🔰 - change hosts config of your computer system for bypassing CSP script redirect restriction.
+-   🚀 - open dev url and use headerEditor(chrome extension) to redirect the main.js url request to local server url
+-   🛠 - and now you can develop this project locally without starting the heavy main tidy3d project !!
 -   ✈️ -
--   📝 -
 -   📝 -
 
 ## Usage
