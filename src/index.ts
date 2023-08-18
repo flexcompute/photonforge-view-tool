@@ -1,4 +1,5 @@
 import { Application, Graphics } from "pixi.js";
+import { Viewport } from "pixi-viewport";
 // import "./style.css";
 
 // (window as any).aa = 222;
@@ -6,6 +7,8 @@ import { Application, Graphics } from "pixi.js";
 class PhotonForgeViewTool {
     schematicApp: Application;
     layoutApp: Application;
+    schematicStage?: Viewport;
+    layoutStage?: Viewport;
     constructor(param: { schematicContainerId: string; layoutContainerId: string }) {
         console.log("view tool init OK");
         const container0Dom = document.getElementById(param.schematicContainerId)!;
@@ -26,7 +29,30 @@ class PhotonForgeViewTool {
         });
         container1Dom.appendChild(this.layoutApp.view);
 
-        this.resizeCanvas();
+        // ========================
+        this.schematicStage = this.addViewPort(this.schematicApp, w, h);
+        this.layoutStage = this.addViewPort(this.layoutApp, w, h);
+        // this.resizeCanvas();
+    }
+
+    private addViewPort(app: Application, w: number, h: number) {
+        const stage = new Viewport({
+            screenWidth: w,
+            screenHeight: h,
+            worldHeight: w,
+            worldWidth: h,
+            interaction: app.renderer.plugins.interaction,
+        });
+        app.stage.addChild(stage);
+        stage
+            .drag()
+            .pinch()
+            .wheel()
+            // .decelerate()
+            .setZoom(0.5)
+            .clampZoom({ maxScale: 2, minScale: 0.3 }).interactiveChildren = true;
+
+        return stage;
     }
 
     public test() {
@@ -39,7 +65,7 @@ class PhotonForgeViewTool {
         node.endFill();
         node.moveTo(w1 / 2 + 10, h1 / 2 + 45);
         node.lineTo(w1 / 2 + 230, h1 / 2 + 55);
-        this.schematicApp.stage.addChild(node);
+        this.schematicStage!.addChild(node);
 
         const { width: w, height: h } = this.layoutApp.view;
         const testG = new Graphics();
@@ -49,7 +75,7 @@ class PhotonForgeViewTool {
         testG.drawRect(w / 2 - 120, h / 2 - 130, 240, 20);
         testG.drawRect(w / 2 - 120, h / 2 + 110, 240, 20);
         testG.endFill();
-        this.layoutApp.stage.addChild(testG);
+        this.layoutStage!.addChild(testG);
     }
 
     private resizeCanvas(): void {
