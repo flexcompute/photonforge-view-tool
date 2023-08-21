@@ -2,19 +2,18 @@
 <html>
     <head>
         <meta charset="utf-8" />
-        <title>Webpack Appfewfewfew</title>
+        <title>PhotonForgeViewTool</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <!-- <script src="main.js"></script> -->
     </head>
     <body>
-        <div id="node-container" style="width: 600px; height: 500px; border: 1px solid"></div>
-        <div id="canvas-container" style="width: 600px; height: 500px"></div>
+        <div id="node-container" style="display: inline-block; width: 600px; height: 500px; border: 1px solid"></div>
+        <div id="canvas-container" style="display: inline-block; margin-left: 10px; width: 600px; height: 500px"></div>
         <script>
             const testTool = new PhotonForgeViewTool({
                 schematicContainerId: "node-container",
                 layoutContainerId: "canvas-container",
             });
-            testTool.test();
         </script>
     </body>
 </html>
