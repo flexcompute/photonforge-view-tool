@@ -11,9 +11,9 @@
         <div id="canvas-container" style="display: inline-block; margin-left: 10px; width: 600px; height: 500px"></div>
         <script>
             const testTool = new PhotonForgeViewTool({
-                schematicContainerId: "node-container",
                 layoutContainerId: "canvas-container",
             });
+            testTool.initSchematicApp("node-container");
         </script>
     </body>
 </html>

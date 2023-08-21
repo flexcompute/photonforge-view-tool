@@ -15,6 +15,9 @@ module.exports = (env) => {
         devServer: {
             open: true,
             allowedHosts: "all",
+            https: true,
+            port: 443,
+            webSocketServer: false,
         },
         module: {
             rules: [

@@ -8,21 +8,24 @@ export interface IXY {
     y: number;
 }
 class PhotonForgeViewTool {
-    schematicApp: Application;
+    schematicApp?: Application;
     layoutApp: Application;
     schematicStage?: Viewport;
     layoutStage?: Viewport;
-    constructor(param: { schematicContainerId: string; layoutContainerId: string }) {
+    constructor(param: { layoutContainerId: string }) {
         console.log("view tool init OK");
-        this.schematicApp = new SchematicViewTool(param.schematicContainerId).app;
         this.layoutApp = new LayoutViewTool(param.layoutContainerId).app;
 
         // this.resizeCanvas();
     }
 
+    initSchematicApp(schematicContainerId: string) {
+        this.schematicApp = new SchematicViewTool(schematicContainerId).app;
+    }
+
     private resizeCanvas(): void {
         const resize = () => {
-            this.schematicApp.renderer.resize(window.innerWidth, window.innerHeight);
+            this.schematicApp?.renderer.resize(window.innerWidth, window.innerHeight);
             this.layoutApp.renderer.resize(window.innerWidth, window.innerHeight);
         };
         resize();

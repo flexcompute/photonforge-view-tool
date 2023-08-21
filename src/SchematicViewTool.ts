@@ -1,12 +1,12 @@
 import { Viewport } from "pixi-viewport";
-import { Application, Graphics } from "pixi.js";
+import { Application, Graphics, Text } from "pixi.js";
 import { addDragEvent, addViewPort } from "./utils";
 import { IXY } from ".";
 
 export default class SchematicViewTool {
     app: Application;
     stage: Viewport;
-    nodeData: { center: IXY }[] = [{ center: { x: 90, y: 230 } }, { center: { x: 300, y: 100 } }];
+    nodeData: { center: IXY }[] = [{ center: { x: -210, y: -30 } }, { center: { x: 200, y: 30 } }];
     viewNodes: Graphics[] = [];
     connectLine = new Graphics();
     constructor(containerId: string) {
@@ -22,6 +22,7 @@ export default class SchematicViewTool {
         containerDom.appendChild(this.app.view);
 
         this.stage = addViewPort(this.app, w, h);
+        this.stage.position.set(w / 2, h / 2);
 
         const { width: w1, height: h1 } = this.app.view;
 
@@ -30,6 +31,18 @@ export default class SchematicViewTool {
             this.viewNodes.push(node);
             this.stage!.addChild(node);
         });
+        const fontStyle = { fontSize: 64 };
+        const text0 = new Text("Port 1", fontStyle);
+        const text1 = new Text("Port 0", fontStyle);
+        text0.anchor.set(1, 0.5);
+        text0.scale.set(0.2);
+        text1.anchor.set(0, 0.5);
+        text1.scale.set(0.2);
+        text0.position.set(50, 0);
+        text1.position.set(-50, 0);
+
+        this.viewNodes[0].addChild(text0);
+        this.viewNodes[1].addChild(text1);
 
         this.updateConnectLine();
         this.stage!.addChild(this.connectLine);
