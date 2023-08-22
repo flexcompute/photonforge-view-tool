@@ -11,6 +11,8 @@ export function addDragEvent(target: Graphics, moveCallback?: () => void) {
         event.data.getLocalPosition(target.parent, dragPoint);
         dragPoint.x -= target.x;
         dragPoint.y -= target.y;
+        target.alpha = 0.5;
+        target.tint = 0x0077ff;
         target.parent.on("pointermove", onDragMove);
     };
     const onDragMove = (event: InteractionEvent) => {
@@ -21,6 +23,8 @@ export function addDragEvent(target: Graphics, moveCallback?: () => void) {
     };
     const onDragEnd = (event: InteractionEvent) => {
         event.stopPropagation();
+        target.alpha = 1;
+        target.tint = 0xffffff;
         target.parent.off("pointermove", onDragMove);
     };
 
@@ -50,6 +54,34 @@ export function drawTestLayoutGraphic(w: number, h: number) {
     testG.lineTo(w / 2 - 150, h / 2 - 100);
     testG.lineTo(w / 2 - 300, h / 2 - 100);
     testG.closePath();
+
+    const portLine0 = new Graphics();
+    portLine0.lineStyle(2, 0xff0000, 1);
+    portLine0.moveTo(w / 2 - 300, h / 2 - 140);
+    portLine0.lineTo(w / 2 - 300, h / 2 - 100);
+    testG.addChild(portLine0);
+
+    const portLine1 = new Graphics();
+    portLine0.lineStyle(2, 0xff0000, 1);
+    portLine0.moveTo(w / 2 + 300, h / 2 - 140);
+    portLine0.lineTo(w / 2 + 300, h / 2 - 100);
+    testG.addChild(portLine0);
+
+    const portLine2 = new Graphics();
+    portLine0.lineStyle(2, 0xff0000, 1);
+    portLine0.moveTo(w / 2 + 300, h / 2 + 100);
+    portLine0.lineTo(w / 2 + 300, h / 2 + 140);
+    testG.addChild(portLine0);
+
+    const portLine3 = new Graphics();
+    portLine0.lineStyle(2, 0xff0000, 1);
+    portLine0.moveTo(w / 2 - 300, h / 2 + 140);
+    portLine0.lineTo(w / 2 - 300, h / 2 + 100);
+
+    [portLine0, portLine1, portLine2, portLine3].forEach((target) => {
+        testG.addChild(target);
+        addDragEvent(target);
+    });
 
     testG.drawCircle(w / 2, h / 2, 60);
     return testG;

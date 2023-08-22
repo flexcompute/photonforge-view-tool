@@ -31,13 +31,13 @@ export default class SchematicViewTool {
             this.viewNodes.push(node);
             this.stage!.addChild(node);
         });
-        const fontStyle = { fontSize: 64 };
+        const fontStyle = { fontSize: 128 };
         const text0 = new Text("Port 1", fontStyle);
         const text1 = new Text("Port 0", fontStyle);
         text0.anchor.set(1, 0.5);
-        text0.scale.set(0.2);
+        text0.scale.set(0.1);
         text1.anchor.set(0, 0.5);
-        text1.scale.set(0.2);
+        text1.scale.set(0.1);
         text0.position.set(50, 0);
         text1.position.set(-50, 0);
 
@@ -66,6 +66,13 @@ export default class SchematicViewTool {
         this.connectLine.clear();
         this.connectLine.lineStyle(2, 0x000000, 1);
         this.connectLine.moveTo(this.viewNodes[0].x + 60, this.viewNodes[0].y);
-        this.connectLine.lineTo(this.viewNodes[1].x - 60, this.viewNodes[1].y);
+        this.connectLine.bezierCurveTo(
+            this.viewNodes[0].x + 200,
+            this.viewNodes[0].y,
+            this.viewNodes[1].x - 200,
+            this.viewNodes[1].y,
+            this.viewNodes[1].x - 60,
+            this.viewNodes[1].y,
+        );
     };
 }
