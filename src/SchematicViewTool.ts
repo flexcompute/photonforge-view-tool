@@ -5,7 +5,7 @@ import { IXY } from ".";
 
 export default class SchematicViewTool {
     app: Application;
-    stage: Viewport;
+    stage?: Viewport;
     nodeData: { center: IXY }[] = [{ center: { x: -210, y: -30 } }, { center: { x: 200, y: 30 } }];
     viewNodes: Graphics[] = [];
     connectLine = new Graphics();
@@ -21,31 +21,31 @@ export default class SchematicViewTool {
         });
         containerDom.appendChild(this.app.view);
 
-        this.stage = addViewPort(this.app, w, h);
-        this.stage.position.set(w / 2, h / 2);
+        // this.stage = addViewPort(this.app, w, h);
+        // this.stage.position.set(w / 2, h / 2);
 
-        const { width: w1, height: h1 } = this.app.view;
+        // const { width: w1, height: h1 } = this.app.view;
 
-        this.nodeData.forEach((n) => {
-            const node = this.createSchematicNode({ pos: n.center });
-            this.viewNodes.push(node);
-            this.stage!.addChild(node);
-        });
-        const fontStyle = { fontSize: 128 };
-        const text0 = new Text("Port 1", fontStyle);
-        const text1 = new Text("Port 0", fontStyle);
-        text0.anchor.set(1, 0.5);
-        text0.scale.set(0.1);
-        text1.anchor.set(0, 0.5);
-        text1.scale.set(0.1);
-        text0.position.set(50, 0);
-        text1.position.set(-50, 0);
+        // this.nodeData.forEach((n) => {
+        //     const node = this.createSchematicNode({ pos: n.center });
+        //     this.viewNodes.push(node);
+        //     this.stage!.addChild(node);
+        // });
+        // const fontStyle = { fontSize: 128 };
+        // const text0 = new Text("Port 1", fontStyle);
+        // const text1 = new Text("Port 0", fontStyle);
+        // text0.anchor.set(1, 0.5);
+        // text0.scale.set(0.1);
+        // text1.anchor.set(0, 0.5);
+        // text1.scale.set(0.1);
+        // text0.position.set(50, 0);
+        // text1.position.set(-50, 0);
 
-        this.viewNodes[0].addChild(text0);
-        this.viewNodes[1].addChild(text1);
+        // this.viewNodes[0].addChild(text0);
+        // this.viewNodes[1].addChild(text1);
 
-        this.updateConnectLine();
-        this.stage!.addChild(this.connectLine);
+        // this.updateConnectLine();
+        // this.stage!.addChild(this.connectLine);
     }
 
     private createSchematicNode(param: { pos: IXY }) {

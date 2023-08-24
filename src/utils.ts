@@ -1,5 +1,6 @@
 import { Viewport } from "pixi-viewport";
 import { Application, Graphics, InteractionEvent, Point } from "pixi.js";
+import { IXY } from ".";
 
 export function addDragEvent(target: Graphics, moveCallback?: () => void) {
     target.cursor = "pointer";
@@ -87,22 +88,17 @@ export function drawTestLayoutGraphic(w: number, h: number) {
     return testG;
 }
 
-export function addViewPort(app: Application, w: number, h: number) {
+export function addViewPort(app: Application, screenWidth: number, screenHeight: number, scale: number, center: IXY) {
     const stage = new Viewport({
-        screenWidth: w,
-        screenHeight: h,
-        worldHeight: w,
-        worldWidth: h,
+        screenWidth,
+        screenHeight,
         interaction: app.renderer.plugins.interaction,
     });
     app.stage.addChild(stage);
-    stage
-        .drag()
-        .pinch()
-        .wheel()
-        // .decelerate()
-        .setZoom(1)
-        .clampZoom({ maxScale: 2, minScale: 0.3 }).interactiveChildren = true;
+    // .decelerate()
+    // .clampZoom({ maxScale: 2, minScale: 0.3 })
+    stage.setZoom(scale).drag().pinch().wheel().interactiveChildren = true;
+    stage.position.set(screenWidth / 2 - center.x * scale, screenHeight / 2 - center.y * scale);
 
     return stage;
 }
