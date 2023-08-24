@@ -10,6 +10,7 @@ export interface IXY {
 
 export interface ILayer {
     id: number | string;
+    hidden?: boolean;
     name: string;
     color: string;
     pattern: string;
@@ -40,17 +41,22 @@ class PhotonForgeViewTool {
         this.schematicApp = new SchematicViewTool(schematicContainerId).app;
     }
 
-    createObjects(parentComponent: { text: string; children: { cellLayers: IPolygon[]; layers: ILayer[] }[] }) {
+    createObjects(components: { text: string; cellLayers: IPolygon[]; layers: ILayer[]; hidden: boolean }[]) {
         const componentDataArray: { polygonInfo: number[][][]; layerInfo: ILayer | undefined }[] = [];
-        parentComponent.children.forEach((component) => {
-            component.cellLayers.forEach((s) => {
-                componentDataArray.push({
-                    polygonInfo: s.polys,
-                    layerInfo: component.layers.find(
+        components.forEach((component) => {
+            if (!component.hidden) {
+                component.cellLayers.forEach((s) => {
+                    const layer = component.layers.find(
                         (oneLayer) => s.layer === oneLayer.layer.split(",")[0].substring(1),
-                    ),
+                    );
+                    if (!layer?.hidden) {
+                        componentDataArray.push({
+                            polygonInfo: s.polys,
+                            layerInfo: layer,
+                        });
+                    }
                 });
-            });
+            }
         });
         this.layoutTool.initComponents(componentDataArray);
     }

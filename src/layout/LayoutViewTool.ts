@@ -23,33 +23,48 @@ export default class LayoutViewTool {
         });
 
         const axis = new Graphics();
-        axis.lineStyle(2, 0x1965a5, 1);
+        axis.lineStyle(2, 0xeeeeee, 1);
         axis.moveTo(this.w / 2, 0);
         axis.lineTo(this.w / 2, this.h);
         axis.moveTo(0, this.h / 2);
         axis.lineTo(this.w, this.h / 2);
+        // axis.alpha = 0.5;
         this.app.stage.addChild(axis);
 
         containerDom.appendChild(this.app.view);
     }
 
     initComponents(dataArray: { polygonInfo: number[][][]; layerInfo: ILayer | undefined }[]) {
-        debugger;
+        this.componentGroup.length = 0;
+        const promises: Promise<void>[] = [];
         dataArray.forEach((data) => {
             if (data.layerInfo) {
-                this.componentGroup.push(new Component(data as { polygonInfo: number[][][]; layerInfo: ILayer }));
+                const comp = new Component(data as { polygonInfo: number[][][]; layerInfo: ILayer });
+                this.componentGroup.push(comp);
+                promises.push(comp.textureLoadPromise);
             }
         });
-        const rect = new Rectangle();
-        this.componentGroup.forEach((c) => {
-            rect.enlarge(c.viewObject.getBounds());
-        });
-        this.stage = addViewPort(this.app, this.w, this.h, 0.4 * Math.min(this.w / rect.width, this.h / rect.height), {
-            x: rect.x + rect.width / 2,
-            y: rect.y + rect.height / 2,
-        });
-        this.componentGroup.forEach((c) => {
-            this.stage!.addChild(c.viewObject);
+        Promise.all(promises).then(() => {
+            const rect = new Rectangle();
+            this.componentGroup.forEach((c) => {
+                rect.enlarge(c.viewObject.getBounds());
+            });
+            if (!this.stage) {
+                this.stage = addViewPort(
+                    this.app,
+                    this.w,
+                    this.h,
+                    0.4 * Math.min(this.w / rect.width, this.h / rect.height),
+                    {
+                        x: rect.x + rect.width / 2,
+                        y: rect.y + rect.height / 2,
+                    },
+                );
+            }
+            this.stage.removeChildren();
+            this.componentGroup.forEach((c) => {
+                this.stage!.addChild(c.viewObject);
+            });
         });
     }
 }
