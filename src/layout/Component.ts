@@ -1,4 +1,4 @@
-import { BaseTexture, Graphics, Matrix, Sprite, Texture, filters, utils } from "pixi.js";
+import { BaseTexture, Graphics, Matrix, Sprite, Texture, filters, utils, SVGResource } from "pixi.js";
 import { IPolygon, ILayer } from "..";
 import { drawTestLayoutGraphic } from "../utils";
 
@@ -7,14 +7,12 @@ export default class Component {
     viewObject = new Graphics();
     textureLoadPromise: Promise<void>;
     constructor(data: { polygonInfo: number[][][]; layerInfo: ILayer }) {
-        // this.viewObject.beginFill(utils.string2hex(data.layerInfo.color), 1);
-        // this.viewObject.drawRect(-100, -100, 200, 200);
         this.viewObject.lineStyle(0.5, utils.string2hex(data.layerInfo.color));
         this.textureLoadPromise = new Promise((resolve) => {
-            Texture.fromURL(data.layerInfo.patternImage!).then((texture) => {
+            const drawComp = () => {
                 this.viewObject.beginTextureFill({
-                    texture,
-                    matrix: new Matrix().scale(0.05, 0.05),
+                    texture: svgR,
+                    matrix: new Matrix().scale(0.05 / SCALE, 0.05 / SCALE),
                 });
                 data.polygonInfo.forEach((ps) => {
                     this.viewObject.moveTo(ps[0][0], ps[0][1]);
@@ -25,14 +23,21 @@ export default class Component {
                     this.viewObject.endFill();
                 });
                 const colorMatrixFilter = new filters.ColorMatrixFilter();
-
                 const rgb = utils.hex2rgb(utils.string2hex(data.layerInfo.color));
                 colorMatrixFilter.matrix = [0, 0, 0, rgb[0], 0, 0, 0, 0, rgb[1], 0, 0, 0, 0, rgb[2], 0, 0, 0, 0, 1, 0];
-
-                const colorOverLay = new filters.ColorMatrixFilter();
                 this.viewObject.filters = [colorMatrixFilter];
+            };
+            const SCALE = 2;
+            const svgR = Texture.from<SVGResource>(data.layerInfo.patternImage!, { resourceOptions: { scale: SCALE } });
+            if (!svgR.baseTexture.valid) {
+                svgR.baseTexture.on("loaded", () => {
+                    drawComp();
+                    resolve();
+                });
+            } else {
+                drawComp();
                 resolve();
-            });
+            }
         });
 
         // const tt = Sprite.from(data.layerInfo.patternImage!);
