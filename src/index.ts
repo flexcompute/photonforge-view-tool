@@ -22,7 +22,7 @@ export interface ILayer {
 export interface IPolygon {
     layer: string;
     datatype: string;
-    polys: number[][][];
+    polys: number[][][][];
 }
 
 class PhotonForgeViewTool {
@@ -47,11 +47,12 @@ class PhotonForgeViewTool {
             if (!component.hidden) {
                 component.cellLayers.forEach((s) => {
                     const layer = component.layers.find(
-                        (oneLayer) => s.layer === oneLayer.layer.split(",")[0].substring(1),
+                        // (oneLayer) => s.layer === oneLayer.layer.split(",")[0].substring(1),
+                        (oneLayer) => s.layer === oneLayer.layer,
                     );
                     if (!layer?.hidden) {
                         componentDataArray.push({
-                            polygonInfo: s.polys,
+                            polygonInfo: s.polys.flat(),
                             layerInfo: layer,
                         });
                     }
