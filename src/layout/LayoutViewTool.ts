@@ -45,9 +45,11 @@ export default class LayoutViewTool {
             }
         });
         Promise.all(promises).then(() => {
-            const rect = new Rectangle();
-            this.componentGroup.forEach((c) => {
-                rect.enlarge(c.viewObject.getBounds());
+            const rect = this.componentGroup[0].viewObject.getBounds();
+            this.componentGroup.forEach((c, index) => {
+                if (index > 0) {
+                    rect.enlarge(c.viewObject.getBounds());
+                }
             });
             if (!this.stage) {
                 this.stage = addViewPort(
