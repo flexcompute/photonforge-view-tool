@@ -45,7 +45,7 @@ export default class LayoutViewTool {
             }
         });
         Promise.all(promises).then(() => {
-            const rect = this.componentGroup[0].viewObject.getBounds();
+            const rect = this.componentGroup[0]?.viewObject.getBounds() || new Rectangle();
             this.componentGroup.forEach((c, index) => {
                 if (index > 0) {
                     rect.enlarge(c.viewObject.getBounds());
