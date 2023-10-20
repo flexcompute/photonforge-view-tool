@@ -8,6 +8,14 @@ export interface IXY {
     y: number;
 }
 
+export interface IComponent {
+    text: string;
+    cellLayers: IPolygon[];
+    layers?: ILayer[];
+    hidden: boolean;
+    children?: IComponent[];
+}
+
 export interface ILayer {
     id: number | string;
     hidden?: boolean;
@@ -33,7 +41,6 @@ class PhotonForgeViewTool {
     constructor(param: { layoutContainerId: string }) {
         console.log("view tool init OK");
         this.layoutTool = new LayoutViewTool(param.layoutContainerId);
-
         // this.resizeCanvas();
     }
 
@@ -41,24 +48,27 @@ class PhotonForgeViewTool {
         this.schematicApp = new SchematicViewTool(schematicContainerId).app;
     }
 
-    createObjects(components: { text: string; cellLayers: IPolygon[]; layers: ILayer[]; hidden: boolean }[]) {
+    createObjects(components: IComponent[]) {
         const componentDataArray: { polygonInfo: number[][][]; layerInfo: ILayer | undefined }[] = [];
-        components.forEach((component) => {
-            if (!component.hidden) {
-                component.cellLayers.forEach((s) => {
-                    const layer = component.layers.find(
-                        // (oneLayer) => s.layer === oneLayer.layer.split(",")[0].substring(1),
-                        (oneLayer) => s.layer === oneLayer.layer,
-                    );
-                    if (!layer?.hidden) {
-                        componentDataArray.push({
-                            polygonInfo: s.polys.flat(),
-                            layerInfo: layer,
-                        });
+        function handleTreeData(components: IComponent[], layers?: ILayer[]) {
+            components.forEach((component) => {
+                if (!component.hidden) {
+                    component.cellLayers.forEach((s) => {
+                        const layer = (component.layers || layers)!.find((oneLayer) => s.layer === oneLayer.layer);
+                        if (!layer?.hidden) {
+                            componentDataArray.push({
+                                polygonInfo: s.polys.flat(),
+                                layerInfo: layer,
+                            });
+                        }
+                    });
+                    if (component.children) {
+                        handleTreeData(component.children, component.layers || layers);
                     }
-                });
-            }
-        });
+                }
+            });
+        }
+        handleTreeData(components);
         this.layoutTool.initComponents(componentDataArray);
     }
 
