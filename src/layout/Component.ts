@@ -9,6 +9,7 @@ export default class Component {
     constructor(data: { polygonInfo: number[][][]; layerInfo: ILayer }) {
         this.viewObject.addChild(this.fillGraphics);
         this.viewObject.addChild(this.lineGraphics);
+        this.viewObject.scale.y = -1;
         this.lineGraphics.lineStyle(1, utils.string2hex(data.layerInfo.color));
         this.lineGraphics.line.native = true;
         this.textureLoadPromise = new Promise((resolve) => {
@@ -49,8 +50,8 @@ uniform sampler2D uTT;
 varying vec2 vTextureCoord;
 void main(void)
 {
-   vec4 fg = texture2D(uTT, fract(gl_FragCoord.xy / 100.));
-   vec4 have = texture2D(uSampler, vTextureCoord); // fract(gl_FragCoord.xy / 100.));
+   vec4 fg = texture2D(uTT, fract(gl_FragCoord.xy / 50.));
+   vec4 have = texture2D(uSampler, vTextureCoord);
    gl_FragColor = vec4(1., 0., 0., fg.a * have.r);
 }
 `;
