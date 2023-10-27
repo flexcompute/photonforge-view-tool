@@ -9,7 +9,7 @@ export default class Component {
     constructor(data: { polygonInfo: number[][][]; layerInfo?: ILayer }) {
         this.viewObject.addChild(this.fillGraphics);
         this.viewObject.addChild(this.lineGraphics);
-        this.viewObject.scale.y = -1;
+        // this.viewObject.scale.y = -1;
         this.lineGraphics.lineStyle(1, utils.string2hex(data.layerInfo?.color || "#000000"));
         this.lineGraphics.line.native = true;
         this.textureLoadPromise = new Promise((resolve) => {

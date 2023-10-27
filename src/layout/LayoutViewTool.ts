@@ -41,10 +41,8 @@ export default class LayoutViewTool {
             const container = new Container();
             container.name = data.name;
             if (data.transform.origin) {
-                container.position.set(
-                    data.transform.origin[0],
-                    (data.transform.x_reflection ? 1 : -1) * data.transform.origin[1],
-                );
+                container.position.set(data.transform.origin[0], data.transform.origin[1]);
+                container.scale.y = data.transform.x_reflection ? -1 : 1;
             }
             data.polyData.forEach((p) => {
                 const comp = new Component(p);
@@ -60,12 +58,13 @@ export default class LayoutViewTool {
             this.componentGroup.push(generateComponent(data));
         });
         Promise.all(promises).then(() => {
-            const rect = this.componentGroup[0]?.getBounds() || new Rectangle();
-            this.componentGroup.forEach((c, index) => {
-                if (index > 0) {
-                    rect.enlarge(c.getBounds());
-                }
+            const container = new Container();
+            container.name = "reverse-container";
+            container.scale.y = -1;
+            this.componentGroup.forEach((c) => {
+                container.addChild(c);
             });
+            const rect = container.getBounds();
             if (!this.stage) {
                 this.stage = addViewPort(
                     this.app,
@@ -82,9 +81,7 @@ export default class LayoutViewTool {
                 this.stage.moveCenter(rect.x + rect.width / 2, rect.y + rect.height / 2);
             }
             this.stage.removeChildren();
-            this.componentGroup.forEach((c) => {
-                this.stage!.addChild(c);
-            });
+            this.stage.addChild(container);
         });
     }
 }
