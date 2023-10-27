@@ -14,6 +14,9 @@ export interface IComponent {
     layers?: ILayer[];
     hidden: boolean;
     children?: IComponent[];
+    rawPolys: [];
+    name: string;
+    transform: any;
 }
 
 export interface ILayer {
@@ -32,6 +35,21 @@ export interface IPolygon {
     datatype: string;
     polys: number[][][][];
 }
+export interface IOutPolygon {
+    polygonInfo: number[][][];
+    layerInfo: ILayer | undefined;
+}
+export interface IOutComponent {
+    polyData: IOutPolygon[];
+    children: IOutComponent[];
+    name: string;
+    transform: {
+        magnification: number;
+        origin: number[];
+        rotation: number;
+        x_reflection: boolean;
+    };
+}
 
 class PhotonForgeViewTool {
     schematicApp?: Application;
@@ -49,27 +67,31 @@ class PhotonForgeViewTool {
     }
 
     createObjects(components: IComponent[]) {
-        const componentDataArray: { polygonInfo: number[][][]; layerInfo: ILayer | undefined }[] = [];
-        function handleTreeData(components: IComponent[], layers?: ILayer[]) {
+        const handleTreeData = (components: IComponent[], layers?: ILayer[]): IOutComponent[] => {
+            const componentDataArray: IOutComponent[] = [];
             components.forEach((component) => {
                 if (!component.hidden) {
-                    component.cellLayers.forEach((s) => {
-                        const layer = (component.layers || layers)!.find((oneLayer) => s.layer === oneLayer.layer);
+                    const polyData: IOutPolygon[] = [];
+                    component.rawPolys.forEach((s: any) => {
+                        const layer = layers!.find((oneLayer) => `(${s.layer},${s.datatype})` === oneLayer.layer);
                         if (!layer?.hidden) {
-                            componentDataArray.push({
-                                polygonInfo: s.polys.flat(),
+                            polyData.push({
+                                polygonInfo: s.poly,
                                 layerInfo: layer,
                             });
                         }
                     });
-                    if (component.children) {
-                        handleTreeData(component.children, component.layers || layers);
-                    }
+                    componentDataArray.push({
+                        polyData,
+                        children: handleTreeData(component.children || [], component.layers || layers),
+                        transform: component.transform,
+                        name: component.name,
+                    });
                 }
             });
-        }
-        handleTreeData(components);
-        this.layoutTool.initComponents(componentDataArray);
+            return componentDataArray;
+        };
+        this.layoutTool.initComponents(handleTreeData(components));
     }
 
     private resizeCanvas(): void {

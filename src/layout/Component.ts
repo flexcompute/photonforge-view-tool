@@ -6,13 +6,23 @@ export default class Component {
     lineGraphics = new Graphics();
     fillGraphics = new Graphics();
     textureLoadPromise: Promise<void>;
-    constructor(data: { polygonInfo: number[][][]; layerInfo: ILayer }) {
+    constructor(data: { polygonInfo: number[][][]; layerInfo?: ILayer }) {
         this.viewObject.addChild(this.fillGraphics);
         this.viewObject.addChild(this.lineGraphics);
         this.viewObject.scale.y = -1;
-        this.lineGraphics.lineStyle(1, utils.string2hex(data.layerInfo.color));
+        this.lineGraphics.lineStyle(1, utils.string2hex(data.layerInfo?.color || "#000000"));
         this.lineGraphics.line.native = true;
         this.textureLoadPromise = new Promise((resolve) => {
+            if (!data.layerInfo) {
+                data.polygonInfo.forEach((ps) => {
+                    this.lineGraphics.moveTo(ps[0][0], ps[0][1]);
+                    for (let i = 1; i < ps.length; i++) {
+                        this.lineGraphics.lineTo(ps[i][0], ps[i][1]);
+                    }
+                });
+                this.lineGraphics.closePath();
+                resolve();
+            }
             const drawComp = () => {
                 // this.fillGraphics.beginTextureFill({
                 //     texture: svgR,
@@ -31,7 +41,7 @@ export default class Component {
                     this.fillGraphics.endFill();
                 });
                 const colorMatrixFilter = new filters.ColorMatrixFilter();
-                const rgb = utils.hex2rgb(utils.string2hex(data.layerInfo.color));
+                const rgb = utils.hex2rgb(utils.string2hex(data.layerInfo!.color));
                 colorMatrixFilter.matrix = [0, 0, 0, rgb[0], 0, 0, 0, 0, rgb[1], 0, 0, 0, 0, rgb[2], 0, 0, 0, 0, 1, 0];
 
                 const vs = `
@@ -60,7 +70,9 @@ void main(void)
                 this.fillGraphics.filters = [tFilter, colorMatrixFilter];
             };
             const SCALE = 2;
-            const svgR = Texture.from<SVGResource>(data.layerInfo.patternImage!, { resourceOptions: { scale: SCALE } });
+            const svgR = Texture.from<SVGResource>(data.layerInfo!.patternImage!, {
+                resourceOptions: { scale: SCALE },
+            });
             if (!svgR.baseTexture.valid) {
                 svgR.baseTexture.on("loaded", () => {
                     drawComp();

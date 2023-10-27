@@ -1,15 +1,15 @@
 import { Viewport } from "pixi-viewport";
-import { Application, Graphics, Rectangle } from "pixi.js";
+import { Application, Container, Graphics, Rectangle } from "pixi.js";
 import { addViewPort, drawTestLayoutGraphic } from "../utils";
 import Component from "./Component";
-import { IPolygon, ILayer } from "..";
+import { IPolygon, ILayer, IOutComponent } from "..";
 
 export default class LayoutViewTool {
     app: Application;
     stage?: Viewport;
     w;
     h;
-    componentGroup: Component[] = [];
+    componentGroup: Container[] = [];
     constructor(containerId: string) {
         const containerDom = document.getElementById(containerId)!;
         const { clientWidth: w, clientHeight: h } = containerDom;
@@ -34,21 +34,36 @@ export default class LayoutViewTool {
         containerDom.appendChild(this.app.view);
     }
 
-    initComponents(dataArray: { polygonInfo: number[][][]; layerInfo: ILayer | undefined }[]) {
+    initComponents(dataArray: IOutComponent[]) {
         this.componentGroup.length = 0;
         const promises: Promise<void>[] = [];
-        dataArray.forEach((data) => {
-            if (data.layerInfo) {
-                const comp = new Component(data as { polygonInfo: number[][][]; layerInfo: ILayer });
-                this.componentGroup.push(comp);
-                promises.push(comp.textureLoadPromise);
+        const generateComponent = (data: IOutComponent) => {
+            const container = new Container();
+            container.name = data.name;
+            if (data.transform.origin) {
+                container.position.set(
+                    data.transform.origin[0],
+                    (data.transform.x_reflection ? 1 : -1) * data.transform.origin[1],
+                );
             }
+            data.polyData.forEach((p) => {
+                const comp = new Component(p);
+                promises.push(comp.textureLoadPromise);
+                container.addChild(comp.viewObject);
+            });
+            data.children.forEach((data1) => {
+                container.addChild(generateComponent(data1));
+            });
+            return container;
+        };
+        dataArray.forEach((data) => {
+            this.componentGroup.push(generateComponent(data));
         });
         Promise.all(promises).then(() => {
-            const rect = this.componentGroup[0]?.viewObject.getBounds() || new Rectangle();
+            const rect = this.componentGroup[0]?.getBounds() || new Rectangle();
             this.componentGroup.forEach((c, index) => {
                 if (index > 0) {
-                    rect.enlarge(c.viewObject.getBounds());
+                    rect.enlarge(c.getBounds());
                 }
             });
             if (!this.stage) {
@@ -62,10 +77,13 @@ export default class LayoutViewTool {
                         y: rect.y + rect.height / 2,
                     },
                 );
+            } else {
+                this.stage.scale.set(0.4 * Math.min(this.w / rect.width, this.h / rect.height));
+                this.stage.moveCenter(rect.x + rect.width / 2, rect.y + rect.height / 2);
             }
             this.stage.removeChildren();
             this.componentGroup.forEach((c) => {
-                this.stage!.addChild(c.viewObject);
+                this.stage!.addChild(c);
             });
         });
     }
