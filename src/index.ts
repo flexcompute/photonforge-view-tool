@@ -48,6 +48,11 @@ export interface IOutComponent {
         origin: number[];
         rotation: number;
         x_reflection: boolean;
+        repetition: {
+            rows: number;
+            columns: number;
+            spacing: number[];
+        };
     };
 }
 

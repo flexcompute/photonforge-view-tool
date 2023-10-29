@@ -40,18 +40,50 @@ export default class LayoutViewTool {
         const generateComponent = (data: IOutComponent) => {
             const container = new Container();
             container.name = data.name;
-            if (data.transform.origin) {
-                container.position.set(data.transform.origin[0], data.transform.origin[1]);
-                container.scale.y = data.transform.x_reflection ? -1 : 1;
+            console.log(data.name, data.transform);
+            if (data.name === "VIA") {
+                data.transform.magnification = 2;
+                data.transform.rotation = 15;
+                data.transform.repetition.rows = 4;
+                data.transform.repetition.columns = 4;
+                data.transform.repetition.spacing = [5, 5];
             }
-            data.polyData.forEach((p) => {
-                const comp = new Component(p);
-                promises.push(comp.textureLoadPromise);
-                container.addChild(comp.viewObject);
-            });
-            data.children.forEach((data1) => {
-                container.addChild(generateComponent(data1));
-            });
+            if (data.transform.repetition?.spacing) {
+                const { rows, columns, spacing } = data.transform.repetition;
+                for (let i = 0; i < rows; i++) {
+                    for (let j = 0; j < columns; j++) {
+                        data.polyData.forEach((p) => {
+                            const comp = new Component(p);
+                            promises.push(comp.textureLoadPromise);
+                            comp.viewObject.position.set(j * spacing[0], i * spacing[1]);
+                            container.addChild(comp.viewObject);
+                        });
+                        data.children.forEach((data1) => {
+                            const childrenContainer = generateComponent(data1);
+                            childrenContainer.position.set(j * spacing[0], i * spacing[1]);
+                            container.addChild(childrenContainer);
+                        });
+                    }
+                }
+            } else {
+                data.polyData.forEach((p) => {
+                    const comp = new Component(p);
+                    promises.push(comp.textureLoadPromise);
+                    container.addChild(comp.viewObject);
+                });
+                data.children.forEach((data1) => {
+                    container.addChild(generateComponent(data1));
+                });
+            }
+            if (data.transform.origin) {
+                container.children.forEach((c) => {
+                    c.scale.set(data.transform.magnification);
+                    c.scale.y *= data.transform.x_reflection ? -1 : 1;
+                    c.position.x += data.transform.origin[0];
+                    c.position.y += data.transform.origin[1];
+                    c.rotation = (Math.PI / 180) * data.transform.rotation;
+                });
+            }
             return container;
         };
         dataArray.forEach((data) => {
