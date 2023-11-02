@@ -40,14 +40,6 @@ export default class LayoutViewTool {
         const generateComponent = (data: IOutComponent) => {
             const container = new Container();
             container.name = data.name;
-            console.log(data.name, data.transform);
-            if (data.name === "VIA") {
-                data.transform.magnification = 2;
-                data.transform.rotation = 15;
-                data.transform.repetition.rows = 4;
-                data.transform.repetition.columns = 4;
-                data.transform.repetition.spacing = [5, 5];
-            }
             if (data.transform.repetition?.spacing) {
                 const { rows, columns, spacing } = data.transform.repetition;
                 for (let i = 0; i < rows; i++) {
