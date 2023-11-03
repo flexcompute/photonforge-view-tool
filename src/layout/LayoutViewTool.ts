@@ -2,7 +2,7 @@ import { Viewport } from "pixi-viewport";
 import { Application, Container, Graphics, Rectangle } from "pixi.js";
 import { addViewPort, drawTestLayoutGraphic } from "../utils";
 import Component from "./Component";
-import { IPolygon, ILayer, IOutComponent } from "..";
+import { IPolygon, ILayer, IOutComponent, IPort } from "..";
 
 export default class LayoutViewTool {
     app: Application;
@@ -106,6 +106,45 @@ export default class LayoutViewTool {
             }
             this.stage.removeChildren();
             this.stage.addChild(container);
+
+            const ports: IPort[] = [];
+            dataArray.forEach((d) => {
+                if (d.ports) {
+                    ports.push(...d.ports);
+                }
+            });
+            this.handlePorts(ports);
+        });
+    }
+
+    handlePorts(ports: IPort[]) {
+        function drawPort(portLine: Graphics, p: IPort) {
+            portLine.moveTo(0, -p.spec.width / 2);
+            portLine.lineTo(0, p.spec.width / 2);
+
+            const halfA = 0.2;
+            portLine.moveTo(0, -halfA);
+            portLine.lineTo(0, halfA);
+            portLine.lineTo(1.5 * halfA, 0);
+            portLine.lineTo(0, -halfA);
+        }
+
+        ports.forEach((p) => {
+            const portLine = new Graphics();
+            portLine.lineStyle(0.12, 0x820080);
+            // portLine.line.native = true;
+            drawPort(portLine, p);
+            portLine.position.set(p.center.x, p.center.y);
+            portLine.rotation = -(p.input_direction * Math.PI) / 180;
+
+            const portLine2 = new Graphics();
+            portLine2.lineStyle(1, 0x820080);
+            portLine2.line.native = true;
+            drawPort(portLine2, p);
+            portLine2.position.set(p.center.x, p.center.y);
+            portLine2.rotation = -(p.input_direction * Math.PI) / 180;
+
+            this.stage!.addChild(portLine, portLine2);
         });
     }
 }

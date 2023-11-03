@@ -17,8 +17,25 @@ export interface IComponent {
     rawPolys: [];
     name: string;
     transform: any;
+    rscp: { text: string; children: IPort[] }[];
 }
 
+export interface IPort {
+    center: IXY;
+    input_direction: number;
+    spec: {
+        description: string;
+        limits: number[];
+        num_modes: number;
+        path_profiles: {
+            layer: number[];
+            offset: number;
+            width: number;
+        }[];
+        target_neff: number;
+        width: number;
+    };
+}
 export interface ILayer {
     id: number | string;
     hidden?: boolean;
@@ -54,6 +71,7 @@ export interface IOutComponent {
             spacing: number[];
         };
     };
+    ports?: IPort[];
 }
 
 class PhotonForgeViewTool {
@@ -91,6 +109,7 @@ class PhotonForgeViewTool {
                         children: handleTreeData(component.children || [], component.layers || layers),
                         transform: component.transform,
                         name: component.name,
+                        ports: component.rscp?.find((d) => d.text === "Ports")?.children,
                     });
                 }
             });
