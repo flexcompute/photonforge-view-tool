@@ -40,9 +40,9 @@ export default class Component {
                     this.fillGraphics.closePath();
                     this.fillGraphics.endFill();
                 });
-                const colorMatrixFilter = new filters.ColorMatrixFilter();
+                // const colorMatrixFilter = new filters.ColorMatrixFilter();
                 const rgb = utils.hex2rgb(utils.string2hex(data.layerInfo!.color));
-                colorMatrixFilter.matrix = [0, 0, 0, rgb[0], 0, 0, 0, 0, rgb[1], 0, 0, 0, 0, rgb[2], 0, 0, 0, 0, 1, 0];
+                // colorMatrixFilter.matrix = [0, 0, 0, rgb[0], 0, 0, 0, 0, rgb[1], 0, 0, 0, 0, rgb[2], 0, 0, 0, 0, 1, 0];
 
                 const vs = `
 precision mediump float;
@@ -62,12 +62,13 @@ void main(void)
 {
    vec4 fg = texture2D(uTT, fract(gl_FragCoord.xy / 50.));
    vec4 have = texture2D(uSampler, vTextureCoord);
-   gl_FragColor = vec4(1., 0., 0., fg.a * have.r);
+   float k = fg.a * have.r;
+   gl_FragColor = vec4(k * ${rgb[0].toFixed(2)},k * ${rgb[1].toFixed(2)},k * ${rgb[2].toFixed(2)},k);
 }
 `;
 
                 const tFilter = new Filter(undefined, fs, { uTT: svgR });
-                this.fillGraphics.filters = [tFilter, colorMatrixFilter];
+                this.fillGraphics.filters = [tFilter];
             };
             const SCALE = 2;
             const svgR = Texture.from<SVGResource>(data.layerInfo!.patternImage!, {

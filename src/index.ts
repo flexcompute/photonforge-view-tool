@@ -17,6 +17,7 @@ export interface IComponent {
     rawPolys: [];
     name: string;
     transform: any;
+    selected: boolean;
     rscp: { text: string; children: IPort[] }[];
 }
 
@@ -72,16 +73,16 @@ export interface IOutComponent {
         };
     };
     ports?: IPort[];
+    selected: boolean;
 }
 
 class PhotonForgeViewTool {
     schematicApp?: Application;
     layoutTool: LayoutViewTool;
-    schematicStage?: Viewport;
-    layoutStage?: Viewport;
     constructor(param: { layoutContainerId: string }) {
         console.log("view tool init OK");
         this.layoutTool = new LayoutViewTool(param.layoutContainerId);
+        this.addResizeCanvasEvents();
         // this.resizeCanvas();
     }
 
@@ -90,6 +91,7 @@ class PhotonForgeViewTool {
     }
 
     createObjects(components: IComponent[]) {
+        // enter port
         const handleTreeData = (components: IComponent[], layers?: ILayer[]): IOutComponent[] => {
             const componentDataArray: IOutComponent[] = [];
             components.forEach((component) => {
@@ -110,6 +112,7 @@ class PhotonForgeViewTool {
                         transform: component.transform,
                         name: component.name,
                         ports: component.rscp?.find((d) => d.text === "Ports")?.children,
+                        selected: component.selected,
                     });
                 }
             });
@@ -118,10 +121,13 @@ class PhotonForgeViewTool {
         this.layoutTool.initComponents(handleTreeData(components));
     }
 
-    private resizeCanvas(): void {
+    private addResizeCanvasEvents(): void {
         const resize = () => {
-            this.schematicApp?.renderer.resize(window.innerWidth, window.innerHeight);
-            this.layoutTool.app.renderer.resize(window.innerWidth, window.innerHeight);
+            const { clientWidth: w, clientHeight: h } = this.layoutTool.app.view.parentElement!;
+            this.layoutTool.app.renderer.resize(w, h);
+            this.layoutTool.stage?.resize(w, h, w, h);
+            this.layoutTool.resizeCallback?.();
+            // this.schematicApp?.renderer.resize(window.innerWidth, window.innerHeight);
         };
         resize();
         window.addEventListener("resize", resize);
