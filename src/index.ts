@@ -98,7 +98,9 @@ class PhotonForgeViewTool {
                 if (!component.hidden) {
                     const polyData: IOutPolygon[] = [];
                     component.rawPolys.forEach((s: any) => {
-                        const layer = layers!.find((oneLayer) => `(${s.layer},${s.datatype})` === oneLayer.layer);
+                        const layer = (layers || component.layers)!.find(
+                            (oneLayer) => `(${s.layer},${s.datatype})` === oneLayer.layer,
+                        );
                         if (!layer?.hidden) {
                             polyData.push({
                                 polygonInfo: s.poly,
