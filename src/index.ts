@@ -91,8 +91,9 @@ class PhotonForgeViewTool {
     }
 
     createObjects(components: IComponent[]) {
+        console.log(components);
         // enter port
-        const handleTreeData = (components: IComponent[], layers?: ILayer[]): IOutComponent[] => {
+        const handleTreeData = (components: IComponent[], layers?: ILayer[], isTopLevel = false): IOutComponent[] => {
             const componentDataArray: IOutComponent[] = [];
             components.forEach((component) => {
                 if (!component.hidden) {
@@ -110,17 +111,17 @@ class PhotonForgeViewTool {
                     });
                     componentDataArray.push({
                         polyData,
+                        selected: isTopLevel ? false : component.selected,
                         children: handleTreeData(component.children || [], component.layers || layers),
                         transform: component.transform,
                         name: component.name,
                         ports: component.rscp?.find((d) => d.text === "Ports")?.children,
-                        selected: component.selected,
                     });
                 }
             });
             return componentDataArray;
         };
-        this.layoutTool.initComponents(handleTreeData(components));
+        this.layoutTool.initComponents(handleTreeData(components, undefined, true));
     }
 
     private addResizeCanvasEvents(): void {

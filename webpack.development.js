@@ -13,7 +13,7 @@ module.exports = (env) => {
         mode: env.mode,
         devtool: "inline-source-map",
         devServer: {
-            open: true,
+            open: false,
             allowedHosts: "all",
             https: true,
             port: 443,

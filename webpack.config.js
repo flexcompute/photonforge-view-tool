@@ -46,22 +46,22 @@ module.exports = (env) => {
                 inject: "head",
                 scriptLoading: "blocking",
             }),
-            new CopyPlugin({
-                patterns: [
-                    {
-                        from: "assets/**",
-                        // if there are nested subdirectories , keep the hierarchy
-                        to({ context, absoluteFilename }) {
-                            const assetsPath = path.resolve(__dirname, "assets");
-                            if (!absoluteFilename) {
-                                throw Error();
-                            }
-                            const endPath = absoluteFilename.slice(assetsPath.length);
-                            return Promise.resolve(`assets/${endPath}`);
-                        },
-                    },
-                ],
-            }),
+            // new CopyPlugin({
+            //     patterns: [
+            //         {
+            //             from: "assets/**",
+            //             // if there are nested subdirectories , keep the hierarchy
+            //             to({ context, absoluteFilename }) {
+            //                 const assetsPath = path.resolve(__dirname, "assets");
+            //                 if (!absoluteFilename) {
+            //                     throw Error();
+            //                 }
+            //                 const endPath = absoluteFilename.slice(assetsPath.length);
+            //                 return Promise.resolve(`assets/${endPath}`);
+            //             },
+            //         },
+            //     ],
+            // }),
             new CleanWebpackPlugin(),
         ],
     };

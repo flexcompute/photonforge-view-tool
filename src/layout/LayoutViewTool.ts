@@ -41,6 +41,7 @@ export default class LayoutViewTool {
     }
 
     initComponents(dataArray: IOutComponent[]) {
+        this.textWrapDom.innerHTML = "";
         this.componentArray.length = 0;
         const promises: Promise<void>[] = [];
         let selectText = "";
