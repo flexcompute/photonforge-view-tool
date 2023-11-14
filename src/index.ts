@@ -1,4 +1,4 @@
-import { Application } from "pixi.js";
+import { Application, Container } from "pixi.js";
 import { Viewport } from "pixi-viewport";
 import SchematicViewTool from "./SchematicViewTool";
 import LayoutViewTool from "./layout/LayoutViewTool";
@@ -18,6 +18,7 @@ export interface IComponent {
     name: string;
     transform: any;
     selected: boolean;
+    id: string;
     rscp: { text: string; children: IPort[] }[];
 }
 
@@ -61,6 +62,7 @@ export interface IOutComponent {
     polyData: IOutPolygon[];
     children: IOutComponent[];
     name: string;
+    id: string;
     transform: {
         magnification: number;
         origin: number[];
@@ -90,38 +92,60 @@ class PhotonForgeViewTool {
         this.schematicApp = new SchematicViewTool(schematicContainerId).app;
     }
 
-    createObjects(components: IComponent[]) {
+    createObjects(components: IComponent[], commandType?: string, extraData?: any) {
         console.log(components);
-        // enter port
-        const handleTreeData = (components: IComponent[], layers?: ILayer[], isTopLevel = false): IOutComponent[] => {
-            const componentDataArray: IOutComponent[] = [];
-            components.forEach((component) => {
-                if (!component.hidden) {
-                    const polyData: IOutPolygon[] = [];
-                    component.rawPolys.forEach((s: any) => {
-                        const layer = (layers || component.layers)!.find(
-                            (oneLayer) => `(${s.layer},${s.datatype})` === oneLayer.layer,
-                        );
-                        if (!layer?.hidden) {
-                            polyData.push({
-                                polygonInfo: s.poly,
-                                layerInfo: layer,
-                            });
-                        }
-                    });
-                    componentDataArray.push({
-                        polyData,
-                        selected: isTopLevel ? false : component.selected,
-                        children: handleTreeData(component.children || [], component.layers || layers),
-                        transform: component.transform,
-                        name: component.name,
-                        ports: component.rscp?.find((d) => d.text === "Ports")?.children,
-                    });
+        if (commandType === "component hidden") {
+            this.layoutTool.idCacheMap.get(extraData.id)!.visible = !extraData.hidden;
+        } else if (commandType === "component check") {
+            if (extraData.selected === false) {
+                this.layoutTool.selectContainer.removeChildren();
+            } else {
+                const selectRectArray = [];
+                const container = this.layoutTool.idCacheMap.get(extraData.id)!;
+                if (extraData.transform.repetition?.spacing) {
+                    selectRectArray.push(...(container.children as Container[]));
+                } else {
+                    selectRectArray.push(container);
                 }
-            });
-            return componentDataArray;
-        };
-        this.layoutTool.initComponents(handleTreeData(components, undefined, true));
+                this.layoutTool.generateSelectBound(selectRectArray);
+            }
+        } else {
+            // enter port
+            const handleTreeData = (
+                components: IComponent[],
+                layers?: ILayer[],
+                isTopLevel = false,
+            ): IOutComponent[] => {
+                const componentDataArray: IOutComponent[] = [];
+                components.forEach((component) => {
+                    if (!component.hidden) {
+                        const polyData: IOutPolygon[] = [];
+                        component.rawPolys.forEach((s: any) => {
+                            const layer = (layers || component.layers)!.find(
+                                (oneLayer) => `(${s.layer},${s.datatype})` === oneLayer.layer,
+                            );
+                            if (!layer?.hidden) {
+                                polyData.push({
+                                    polygonInfo: s.poly,
+                                    layerInfo: layer,
+                                });
+                            }
+                        });
+                        componentDataArray.push({
+                            polyData,
+                            selected: isTopLevel ? false : component.selected,
+                            children: handleTreeData(component.children || [], component.layers || layers),
+                            transform: component.transform,
+                            name: component.name,
+                            ports: component.rscp?.find((d) => d.text === "Ports")?.children,
+                            id: component.id,
+                        });
+                    }
+                });
+                return componentDataArray;
+            };
+            this.layoutTool.initComponents(handleTreeData(components, undefined, true));
+        }
     }
 
     private addResizeCanvasEvents(): void {

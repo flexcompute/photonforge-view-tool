@@ -13,6 +13,9 @@ export default class LayoutViewTool {
     containerDom: HTMLElement;
     textWrapDom: HTMLDivElement;
     resizeCallback?: Function;
+    idCacheMap = new Map<string, Container>();
+    selectContainer = new Container();
+    reverseContainer = new Container();
     constructor(containerId: string) {
         this.containerDom = document.getElementById(containerId)!;
         this.textWrapDom = document.createElement("div");
@@ -49,6 +52,7 @@ export default class LayoutViewTool {
         const generateComponent = (data: IOutComponent) => {
             const container = new Container();
             container.name = data.name;
+            this.idCacheMap.set(data.id, container);
             if (data.transform.repetition?.spacing) {
                 const { rows, columns, spacing } = data.transform.repetition;
                 for (let i = 0; i < rows; i++) {
@@ -85,14 +89,6 @@ export default class LayoutViewTool {
                     c.rotation = (Math.PI / 180) * data.transform.rotation;
                 });
             }
-            if (data.selected) {
-                selectText = data.name;
-                if (data.transform.repetition?.spacing) {
-                    selectRectArray.push(...(container.children as Container[]));
-                } else {
-                    selectRectArray.push(container);
-                }
-            }
 
             return container;
         };
@@ -100,34 +96,18 @@ export default class LayoutViewTool {
             this.componentArray.push(generateComponent(data));
         });
         Promise.all(promises).then(() => {
-            const container = new Container();
-            container.name = "reverse-container";
-            container.scale.y = -1;
+            this.reverseContainer = new Container();
+            this.reverseContainer.name = "reverse-container";
+            this.reverseContainer.scale.y = -1;
 
-            const boundGraphicsArray: Graphics[] = [];
-            selectRectArray.forEach((c: Container) => {
-                const boundGraphics = new Graphics();
-                const rect = c.getBounds();
-                boundGraphics.lineStyle(1, 0x000000);
-                boundGraphics.beginFill(0xffffff, 0.7);
-                boundGraphics.line.native = true;
-                boundGraphics.drawRect(rect.x, rect.y, rect.width, rect.height);
-                boundGraphics.endFill();
-
-                boundGraphicsArray.push(boundGraphics);
-            });
             this.componentArray.forEach((c) => {
-                container.addChild(c);
+                this.reverseContainer.addChild(c);
             });
 
-            const selectContainer = new Container();
-            container.addChild(selectContainer);
-            selectContainer.name = "select-bound-container";
-            boundGraphicsArray.forEach((c) => {
-                selectContainer.addChild(c);
-            });
+            this.selectContainer.name = "select-bound-container";
+            this.selectContainer.scale.y = -1;
 
-            const rect = container.getBounds();
+            const rect = this.reverseContainer.getBounds();
             if (!this.stage) {
                 this.stage = addViewPort(
                     this.app,
@@ -145,9 +125,10 @@ export default class LayoutViewTool {
             }
             this.stage.removeChildren();
 
-            this.stage.addChild(container);
-            selectRectArray.forEach((s) => {});
-            const regenerateTexts = () => {
+            this.stage.addChild(this.reverseContainer);
+            this.stage.addChild(this.selectContainer);
+
+            const regenerateTexts = (selectRectArray: Container[]) => {
                 if (selectText) {
                     this.textWrapDom.innerHTML = "";
                     selectRectArray.forEach((s) => {
@@ -167,7 +148,6 @@ export default class LayoutViewTool {
                 }
             };
             this.resizeCallback = regenerateTexts;
-            regenerateTexts();
             this.stage.on("moved", regenerateTexts);
 
             const ports: IPort[] = [];
@@ -178,6 +158,27 @@ export default class LayoutViewTool {
             });
             this.handlePorts(ports);
         });
+    }
+
+    generateSelectBound(containers: Container[]) {
+        this.selectContainer.removeChildren();
+
+        const boundGraphicsArray: Graphics[] = [];
+        containers.forEach((c: Container) => {
+            const boundGraphics = new Graphics();
+            const rect = c.getBounds();
+            boundGraphics.lineStyle(1, 0x000000);
+            boundGraphics.beginFill(0xffffff, 0.7);
+            boundGraphics.line.native = true;
+            boundGraphics.drawRect(rect.x, rect.y, rect.width, rect.height);
+            boundGraphics.endFill();
+
+            boundGraphicsArray.push(boundGraphics);
+        });
+        boundGraphicsArray.forEach((c) => {
+            this.selectContainer.addChild(c);
+        });
+        this.resizeCallback?.();
     }
 
     handlePorts(ports: IPort[]) {
