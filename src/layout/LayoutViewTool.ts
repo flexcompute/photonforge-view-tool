@@ -87,7 +87,11 @@ export default class LayoutViewTool {
             }
             if (data.selected) {
                 selectText = data.name;
-                selectRectArray.push(container);
+                if (data.transform.repetition?.spacing) {
+                    selectRectArray.push(...(container.children as Container[]));
+                } else {
+                    selectRectArray.push(container);
+                }
             }
 
             return container;
@@ -115,8 +119,12 @@ export default class LayoutViewTool {
             this.componentArray.forEach((c) => {
                 container.addChild(c);
             });
+
+            const selectContainer = new Container();
+            container.addChild(selectContainer);
+            selectContainer.name = "select-bound-container";
             boundGraphicsArray.forEach((c) => {
-                container.addChild(c);
+                selectContainer.addChild(c);
             });
 
             const rect = container.getBounds();
