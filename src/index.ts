@@ -92,22 +92,25 @@ class PhotonForgeViewTool {
         this.schematicApp = new SchematicViewTool(schematicContainerId).app;
     }
 
-    createObjects(components: IComponent[], commandType?: string, extraData?: any) {
+    createObjects(components: IComponent[], commandType: string, extraData?: any) {
         console.log(components);
         if (commandType === "component hidden") {
-            this.layoutTool.idCacheMap.get(extraData.id)!.visible = !extraData.hidden;
-        } else if (commandType === "component check") {
-            if (extraData.selected === false) {
+            this.layoutTool.idCacheMap.get(extraData.id)!.forEach((c) => (c.visible = !extraData.hidden));
+        } else if (["component check", "unselected"].includes(commandType)) {
+            if (!extraData.selected) {
+                this.layoutTool.textWrapDom.innerHTML = "";
                 this.layoutTool.selectContainer.removeChildren();
             } else {
                 const selectRectArray = [];
-                const container = this.layoutTool.idCacheMap.get(extraData.id)!;
+                const containers = this.layoutTool.idCacheMap.get(extraData.id)!;
                 if (extraData.transform.repetition?.spacing) {
-                    selectRectArray.push(...(container.children as Container[]));
+                    selectRectArray.push(...(containers.map((c) => c.children).flat() as Container[]));
                 } else {
-                    selectRectArray.push(container);
+                    selectRectArray.push(...containers);
                 }
-                this.layoutTool.generateSelectBound(selectRectArray);
+                this.layoutTool.selectComponentName = extraData.name;
+                this.layoutTool.selectRectArray = selectRectArray;
+                this.layoutTool.generateSelectBound();
             }
         } else {
             // enter port

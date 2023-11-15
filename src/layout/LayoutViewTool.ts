@@ -13,9 +13,12 @@ export default class LayoutViewTool {
     containerDom: HTMLElement;
     textWrapDom: HTMLDivElement;
     resizeCallback?: Function;
-    idCacheMap = new Map<string, Container>();
+    idCacheMap = new Map<string, Container[]>();
     selectContainer = new Container();
     reverseContainer = new Container();
+
+    selectRectArray: Container[] = [];
+    selectComponentName = "";
     constructor(containerId: string) {
         this.containerDom = document.getElementById(containerId)!;
         this.textWrapDom = document.createElement("div");
@@ -47,12 +50,14 @@ export default class LayoutViewTool {
         this.textWrapDom.innerHTML = "";
         this.componentArray.length = 0;
         const promises: Promise<void>[] = [];
-        let selectText = "";
-        const selectRectArray: Container[] = [];
         const generateComponent = (data: IOutComponent) => {
             const container = new Container();
             container.name = data.name;
-            this.idCacheMap.set(data.id, container);
+            if (this.idCacheMap.get(data.id)) {
+                this.idCacheMap.get(data.id)!.push(container);
+            } else {
+                this.idCacheMap.set(data.id, [container]);
+            }
             if (data.transform.repetition?.spacing) {
                 const { rows, columns, spacing } = data.transform.repetition;
                 for (let i = 0; i < rows; i++) {
@@ -105,7 +110,6 @@ export default class LayoutViewTool {
             });
 
             this.selectContainer.name = "select-bound-container";
-            this.selectContainer.scale.y = -1;
 
             const rect = this.reverseContainer.getBounds();
             if (!this.stage) {
@@ -128,24 +132,22 @@ export default class LayoutViewTool {
             this.stage.addChild(this.reverseContainer);
             this.stage.addChild(this.selectContainer);
 
-            const regenerateTexts = (selectRectArray: Container[]) => {
-                if (selectText) {
-                    this.textWrapDom.innerHTML = "";
-                    selectRectArray.forEach((s) => {
-                        const rect = s.getBounds();
-                        const x = (rect.x + rect.width / 2) / this.app.screen.width;
-                        const y = (rect.y + rect.height / 2) / this.app.screen.height;
-                        const textNode = document.createTextNode(selectText);
-                        const textElement = document.createElement("span");
-                        textElement.appendChild(textNode);
-                        textElement.style.position = "absolute";
-                        textElement.style.left = `${x * 100}%`;
-                        textElement.style.top = `${y * 100}%`;
-                        textElement.style.userSelect = "none";
-                        textElement.style.transform = "translate(-50%, -50%)";
-                        this.textWrapDom.appendChild(textElement);
-                    });
-                }
+            const regenerateTexts = () => {
+                this.textWrapDom.innerHTML = "";
+                this.selectRectArray.forEach((s) => {
+                    const rect = s.getBounds();
+                    const x = (rect.x + rect.width / 2) / this.app.screen.width;
+                    const y = (rect.y + rect.height / 2) / this.app.screen.height;
+                    const textNode = document.createTextNode(this.selectComponentName);
+                    const textElement = document.createElement("span");
+                    textElement.appendChild(textNode);
+                    textElement.style.position = "absolute";
+                    textElement.style.left = `${x * 100}%`;
+                    textElement.style.top = `${y * 100}%`;
+                    textElement.style.userSelect = "none";
+                    textElement.style.transform = "translate(-50%, -50%)";
+                    this.textWrapDom.appendChild(textElement);
+                });
             };
             this.resizeCallback = regenerateTexts;
             this.stage.on("moved", regenerateTexts);
@@ -160,11 +162,12 @@ export default class LayoutViewTool {
         });
     }
 
-    generateSelectBound(containers: Container[]) {
+    generateSelectBound() {
         this.selectContainer.removeChildren();
 
+        this.stage!.removeChild(this.reverseContainer);
         const boundGraphicsArray: Graphics[] = [];
-        containers.forEach((c: Container) => {
+        this.selectRectArray.forEach((c: Container) => {
             const boundGraphics = new Graphics();
             const rect = c.getBounds();
             boundGraphics.lineStyle(1, 0x000000);
@@ -175,10 +178,11 @@ export default class LayoutViewTool {
 
             boundGraphicsArray.push(boundGraphics);
         });
+        this.stage!.addChildAt(this.reverseContainer, 0);
         boundGraphicsArray.forEach((c) => {
             this.selectContainer.addChild(c);
         });
-        this.resizeCallback?.();
+        this.resizeCallback?.(boundGraphicsArray, this.selectComponentName);
     }
 
     handlePorts(ports: IPort[]) {
