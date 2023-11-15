@@ -14,6 +14,7 @@ export default class LayoutViewTool {
     textWrapDom: HTMLDivElement;
     resizeCallback?: Function;
     idCacheMap = new Map<string, Container[]>();
+    layerCacheMap = new Map<string, Container[]>();
     reverseContainer = new Container();
 
     portContainer = new Container();
@@ -51,6 +52,7 @@ export default class LayoutViewTool {
     initComponents(dataArray: IOutComponent[]) {
         this.textWrapDom.innerHTML = "";
         this.idCacheMap.clear();
+        this.layerCacheMap.clear();
         this.componentArray.length = 0;
         const promises: Promise<void>[] = [];
         const ports: IPort[] = [];
@@ -75,6 +77,14 @@ export default class LayoutViewTool {
                             promises.push(comp.textureLoadPromise);
                             comp.viewObject.position.set(j * spacing[0], i * spacing[1]);
                             container.addChild(comp.viewObject);
+
+                            if (p.layerInfo?.layer) {
+                                if (this.layerCacheMap.get(p.layerInfo.layer)) {
+                                    this.layerCacheMap.get(p.layerInfo.layer)!.push(comp.viewObject);
+                                } else {
+                                    this.layerCacheMap.set(p.layerInfo.layer, [comp.viewObject]);
+                                }
+                            }
                         });
                         data.children.forEach((data1) => {
                             const childrenContainer = generateComponent(data1);
@@ -88,6 +98,14 @@ export default class LayoutViewTool {
                     const comp = new Component(p);
                     promises.push(comp.textureLoadPromise);
                     container.addChild(comp.viewObject);
+
+                    if (p.layerInfo?.layer) {
+                        if (this.layerCacheMap.get(p.layerInfo.layer)) {
+                            this.layerCacheMap.get(p.layerInfo.layer)!.push(comp.viewObject);
+                        } else {
+                            this.layerCacheMap.set(p.layerInfo.layer, [comp.viewObject]);
+                        }
+                    }
                 });
                 data.children.forEach((data1) => {
                     container.addChild(generateComponent(data1));

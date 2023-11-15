@@ -111,6 +111,17 @@ class PhotonForgeViewTool {
                 this.layoutTool.selectRectArray = selectRectArray;
                 this.layoutTool.generateSelectBound();
             }
+        } else if (commandType === "layer hidden") {
+            components.forEach((c) => {
+                c.layers?.forEach((l) => {
+                    const target = this.layoutTool.layerCacheMap.get(l.layer);
+                    if (target) {
+                        target.forEach((c1) => {
+                            c1.visible = !l.hidden;
+                        });
+                    }
+                });
+            });
         } else {
             // enter
             const handleTreeData = (

@@ -60,7 +60,7 @@ uniform sampler2D uTT;
 varying vec2 vTextureCoord;
 void main(void)
 {
-   vec4 fg = texture2D(uTT, fract(gl_FragCoord.xy / 50.));
+   vec4 fg = texture2D(uTT, fract(vec2(gl_FragCoord.x, -gl_FragCoord.y) / 50.));
    vec4 have = texture2D(uSampler, vTextureCoord);
    float k = fg.a * have.r;
    gl_FragColor = vec4(k * ${rgb[0].toFixed(2)},k * ${rgb[1].toFixed(2)},k * ${rgb[2].toFixed(2)},k);
