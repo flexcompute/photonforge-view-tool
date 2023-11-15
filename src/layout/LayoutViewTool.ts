@@ -50,7 +50,12 @@ export default class LayoutViewTool {
         this.textWrapDom.innerHTML = "";
         this.componentArray.length = 0;
         const promises: Promise<void>[] = [];
+        const ports: IPort[] = [];
+
         const generateComponent = (data: IOutComponent) => {
+            if (data.ports) {
+                ports.push(...data.ports);
+            }
             const container = new Container();
             container.name = data.name;
             if (this.idCacheMap.get(data.id)) {
@@ -152,12 +157,6 @@ export default class LayoutViewTool {
             this.resizeCallback = regenerateTexts;
             this.stage.on("moved", regenerateTexts);
 
-            const ports: IPort[] = [];
-            dataArray.forEach((d) => {
-                if (d.ports) {
-                    ports.push(...d.ports);
-                }
-            });
             this.handlePorts(ports);
         });
     }
