@@ -14,8 +14,10 @@ export default class LayoutViewTool {
     textWrapDom: HTMLDivElement;
     resizeCallback?: Function;
     idCacheMap = new Map<string, Container[]>();
-    selectContainer = new Container();
     reverseContainer = new Container();
+
+    portContainer = new Container();
+    selectContainer = new Container();
 
     selectRectArray: Container[] = [];
     selectComponentName = "";
@@ -48,6 +50,7 @@ export default class LayoutViewTool {
 
     initComponents(dataArray: IOutComponent[]) {
         this.textWrapDom.innerHTML = "";
+        this.idCacheMap.clear();
         this.componentArray.length = 0;
         const promises: Promise<void>[] = [];
         const ports: IPort[] = [];
@@ -115,6 +118,7 @@ export default class LayoutViewTool {
             });
 
             this.selectContainer.name = "select-bound-container";
+            this.portContainer.name = "port=container";
 
             const rect = this.reverseContainer.getBounds();
             if (!this.stage) {
@@ -136,6 +140,7 @@ export default class LayoutViewTool {
 
             this.stage.addChild(this.reverseContainer);
             this.stage.addChild(this.selectContainer);
+            this.reverseContainer.addChild(this.portContainer);
 
             const regenerateTexts = () => {
                 this.textWrapDom.innerHTML = "";
@@ -218,7 +223,7 @@ export default class LayoutViewTool {
             portLine2.position.set(p.center.x, p.center.y);
             portLine2.rotation = -(p.input_direction * Math.PI) / 180;
 
-            this.stage!.addChild(portLine, portLine2);
+            this.portContainer!.addChild(portLine, portLine2);
         });
     }
 }
