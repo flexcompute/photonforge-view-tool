@@ -98,8 +98,7 @@ class PhotonForgeViewTool {
             this.layoutTool.idCacheMap.get(extraData.id)!.forEach((c) => (c.visible = !extraData.hidden));
         } else if (["component check", "unselected"].includes(commandType)) {
             if (!extraData.selected) {
-                this.layoutTool.textWrapDom.innerHTML = "";
-                this.layoutTool.selectContainer.removeChildren();
+                this.layoutTool.unSelectComponent();
             } else {
                 const selectRectArray = [];
                 const containers = this.layoutTool.idCacheMap.get(extraData.id)!;
@@ -113,7 +112,7 @@ class PhotonForgeViewTool {
                 this.layoutTool.generateSelectBound();
             }
         } else {
-            // enter port
+            // enter
             const handleTreeData = (
                 components: IComponent[],
                 layers?: ILayer[],

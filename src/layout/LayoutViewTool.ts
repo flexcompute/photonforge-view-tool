@@ -185,6 +185,13 @@ export default class LayoutViewTool {
         this.resizeCallback?.(boundGraphicsArray, this.selectComponentName);
     }
 
+    unSelectComponent() {
+        this.selectComponentName = "";
+        this.selectRectArray.length = 0;
+        this.textWrapDom.innerHTML = "";
+        this.selectContainer.removeChildren();
+    }
+
     handlePorts(ports: IPort[]) {
         function drawPort(portLine: Graphics, p: IPort) {
             portLine.moveTo(0, -p.spec.width / 2);
