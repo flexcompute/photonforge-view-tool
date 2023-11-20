@@ -54,6 +54,7 @@ export default class LayoutViewTool {
         this.idCacheMap.clear();
         this.layerCacheMap.clear();
         this.componentArray.length = 0;
+        this.selectRectArray.length = 0;
         const promises: Promise<void>[] = [];
         const ports: IPort[] = [];
 
@@ -117,7 +118,7 @@ export default class LayoutViewTool {
                     c.scale.y *= data.transform.x_reflection ? -1 : 1;
                     c.position.x += data.transform.origin[0];
                     c.position.y += data.transform.origin[1];
-                    c.rotation = (Math.PI / 180) * data.transform.rotation;
+                    c.rotation = data.transform.rotation;
                 });
             }
 
@@ -226,6 +227,7 @@ export default class LayoutViewTool {
             portLine.lineTo(0, -halfA);
         }
 
+        this.portContainer.removeChildren();
         ports.forEach((p) => {
             const portLine = new Graphics();
             portLine.lineStyle(0.12, 0x820080);
