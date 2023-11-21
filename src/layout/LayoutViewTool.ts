@@ -20,7 +20,7 @@ export default class LayoutViewTool {
     portContainer = new Container();
     selectContainer = new Container();
 
-    selectRectArray: Container[] = [];
+    selectedObjectArray: Container[] = [];
     selectComponentName = "";
     constructor(containerId: string) {
         this.containerDom = document.getElementById(containerId)!;
@@ -54,7 +54,7 @@ export default class LayoutViewTool {
         this.idCacheMap.clear();
         this.layerCacheMap.clear();
         this.componentArray.length = 0;
-        this.selectRectArray.length = 0;
+        this.selectedObjectArray.length = 0;
         const promises: Promise<void>[] = [];
         const ports: IPort[] = [];
 
@@ -121,7 +121,15 @@ export default class LayoutViewTool {
                     c.rotation = data.transform.rotation;
                 });
             }
-
+            if (data.selected) {
+                const containers = this.idCacheMap.get(data.id)!;
+                if (data.transform.repetition?.spacing) {
+                    this.selectedObjectArray.push(...(containers.map((c) => c.children).flat() as Container[]));
+                } else {
+                    this.selectedObjectArray.push(...containers);
+                }
+                this.selectComponentName = data.name;
+            }
             return container;
         };
         dataArray.forEach((data) => {
@@ -163,7 +171,7 @@ export default class LayoutViewTool {
 
             const regenerateTexts = () => {
                 this.textWrapDom.innerHTML = "";
-                this.selectRectArray.forEach((s) => {
+                this.selectedObjectArray.forEach((s) => {
                     const rect = s.getBounds();
                     const x = (rect.x + rect.width / 2) / this.app.screen.width;
                     const y = (rect.y + rect.height / 2) / this.app.screen.height;
@@ -182,6 +190,8 @@ export default class LayoutViewTool {
             this.stage.on("moved", regenerateTexts);
 
             this.handlePorts(ports);
+            this.generateSelectBound();
+            regenerateTexts();
         });
     }
 
@@ -190,7 +200,7 @@ export default class LayoutViewTool {
 
         this.stage!.removeChild(this.reverseContainer);
         const boundGraphicsArray: Graphics[] = [];
-        this.selectRectArray.forEach((c: Container) => {
+        this.selectedObjectArray.forEach((c: Container) => {
             const boundGraphics = new Graphics();
             const rect = c.getBounds();
             boundGraphics.lineStyle(1, 0x000000);
@@ -210,7 +220,7 @@ export default class LayoutViewTool {
 
     unSelectComponent() {
         this.selectComponentName = "";
-        this.selectRectArray.length = 0;
+        this.selectedObjectArray.length = 0;
         this.textWrapDom.innerHTML = "";
         this.selectContainer.removeChildren();
     }

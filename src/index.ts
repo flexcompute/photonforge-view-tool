@@ -100,15 +100,15 @@ class PhotonForgeViewTool {
             if (!extraData.selected) {
                 this.layoutTool.unSelectComponent();
             } else {
-                const selectRectArray = [];
+                const selectedObjectArray = [];
                 const containers = this.layoutTool.idCacheMap.get(extraData.id)!;
                 if (extraData.transform.repetition?.spacing) {
-                    selectRectArray.push(...(containers.map((c) => c.children).flat() as Container[]));
+                    selectedObjectArray.push(...(containers.map((c) => c.children).flat() as Container[]));
                 } else {
-                    selectRectArray.push(...containers);
+                    selectedObjectArray.push(...containers);
                 }
                 this.layoutTool.selectComponentName = extraData.name;
-                this.layoutTool.selectRectArray = selectRectArray;
+                this.layoutTool.selectedObjectArray = selectedObjectArray;
                 this.layoutTool.generateSelectBound();
             }
         } else if (commandType === "layer hidden") {
