@@ -198,7 +198,7 @@ export default class LayoutViewTool {
     generateSelectBound() {
         this.selectContainer.removeChildren();
 
-        this.stage!.removeChild(this.reverseContainer);
+        this.stage?.removeChild(this.reverseContainer);
         const boundGraphicsArray: Graphics[] = [];
         this.selectedObjectArray.forEach((c: Container) => {
             const boundGraphics = new Graphics();
@@ -211,7 +211,7 @@ export default class LayoutViewTool {
 
             boundGraphicsArray.push(boundGraphics);
         });
-        this.stage!.addChildAt(this.reverseContainer, 0);
+        this.stage?.addChildAt(this.reverseContainer, 0);
         boundGraphicsArray.forEach((c) => {
             this.selectContainer.addChild(c);
         });
