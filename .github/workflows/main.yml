@@ -1,0 +1,38 @@
+name: Test Job
+on:
+    schedule:
+        - cron: "0 */12 * * *"
+    workflow_dispatch:
+jobs:
+    run_python_script:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v3
+              with:
+                  ref: master
+
+            - name: Set up Python
+              uses: actions/setup-python@v4
+              with:
+                  python-version: 3.10.6 # 替换为您的 Python 版本
+
+            - name: Setup Chrome
+              uses: browser-actions/setup-chrome@v1.2.3
+            - run: chrome --version
+
+            - name: Install dependencies
+              run: |
+                  python -m pip install --upgrade pip
+
+            - name: Install dependencies
+              run: pip install -r .github/workflows/requirements.txt
+
+            - name: Run Python script
+              run: python .github/workflows/test.py
+
+            - name: Upload Image Artifact
+              uses: actions/upload-artifact@v3
+              with:
+                  name: reuslt
+                  path: screen-result
