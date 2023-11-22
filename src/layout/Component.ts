@@ -1,4 +1,4 @@
-import { Graphics, Texture, filters, utils, SVGResource, Filter, Container } from "pixi.js";
+import { Graphics, Texture, utils, SVGResource, Container, Shader, Program, MIPMAP_MODES, SCALE_MODES } from "pixi.js";
 import { IPolygon, ILayer } from "..";
 // https://y2x1d18d8u.larksuite.com/docx/SShzdhIKJoN5Xdx7gEsuRwM8sSp
 export default class Component {
@@ -23,13 +23,17 @@ export default class Component {
                 this.lineGraphics.closePath();
                 resolve();
             }
+            const SCALE = 2;
+            const svgR = Texture.from<SVGResource>(data.layerInfo!.patternImage!, {
+                resourceOptions: { scale: SCALE },
+            });
             const drawComp = () => {
                 // this.fillGraphics.beginTextureFill({
                 //     texture: svgR,
                 //     matrix: new Matrix().scale(0.05 / SCALE, 0.05 / SCALE),
                 // });
                 data.polygonInfo.forEach((ps) => {
-                    this.fillGraphics.beginFill(0xff0000);
+                    this.fillGraphics.beginTextureFill({ texture: svgR });
                     this.fillGraphics.moveTo(ps[0][0], ps[0][1]);
                     this.lineGraphics.moveTo(ps[0][0], ps[0][1]);
                     for (let i = 1; i < ps.length; i++) {
@@ -45,35 +49,27 @@ export default class Component {
                 // colorMatrixFilter.matrix = [0, 0, 0, rgb[0], 0, 0, 0, 0, rgb[1], 0, 0, 0, 0, rgb[2], 0, 0, 0, 0, 1, 0];
 
                 const vs = `
-precision mediump float;
 attribute vec2 aVertexPosition;
-
-uniform mat3 translationMatrix;
+attribute vec2 aTextureCoord;
 uniform mat3 projectionMatrix;
+uniform mat3 translationMatrix;
 void main() {
     gl_Position = vec4((projectionMatrix * translationMatrix * vec3(aVertexPosition, 1.0)).xy, 0.0, 1.0);
-}`;
+}
+`;
                 const fs = `
 precision mediump float;
-uniform sampler2D uSampler;
 uniform sampler2D uTT;
-varying vec2 vTextureCoord;
 void main(void)
 {
-   vec4 fg = texture2D(uTT, fract(vec2(gl_FragCoord.x, -gl_FragCoord.y) / 50.));
-   vec4 have = texture2D(uSampler, vTextureCoord);
-   float k = fg.a * have.r;
+   float k = texture2D(uTT, fract(vec2(gl_FragCoord.x, -gl_FragCoord.y) / 50.)).a;
    gl_FragColor = vec4(k * ${rgb[0].toFixed(2)},k * ${rgb[1].toFixed(2)},k * ${rgb[2].toFixed(2)},k);
 }
 `;
 
-                const tFilter = new Filter(undefined, fs, { uTT: svgR });
-                this.fillGraphics.filters = [tFilter];
+                this.fillGraphics.shader = new Shader(new Program(vs, fs), { tint: [], uTT: svgR }); //  = new Filter(undefined, fs, { uTT: svgR });
+                (this.fillGraphics.geometry as any).isBatchable = () => false;
             };
-            const SCALE = 2;
-            const svgR = Texture.from<SVGResource>(data.layerInfo!.patternImage!, {
-                resourceOptions: { scale: SCALE },
-            });
             if (!svgR.baseTexture.valid) {
                 svgR.baseTexture.on("loaded", () => {
                     drawComp();
