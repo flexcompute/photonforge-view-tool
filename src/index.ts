@@ -93,72 +93,7 @@ class PhotonForgeViewTool {
     }
 
     createObjects(components: IComponent[], commandType: string, extraData?: any) {
-        console.log(components);
-        if (commandType === "component hidden") {
-            this.layoutTool.idCacheMap.get(extraData.id)!.forEach((c) => (c.visible = !extraData.hidden));
-        } else if (["component check", "unselected"].includes(commandType)) {
-            if (!extraData.selected) {
-                this.layoutTool.unSelectComponent();
-            } else {
-                const selectedObjectArray = [];
-                const containers = this.layoutTool.idCacheMap.get(extraData.id)!;
-                if (extraData.transform.repetition?.spacing) {
-                    selectedObjectArray.push(...(containers.map((c) => c.children).flat() as Container[]));
-                } else {
-                    selectedObjectArray.push(...containers);
-                }
-                this.layoutTool.selectComponentName = extraData.name;
-                this.layoutTool.selectedObjectArray = selectedObjectArray;
-                this.layoutTool.generateSelectBound();
-            }
-        } else if (commandType === "layer hidden") {
-            components.forEach((c) => {
-                c.layers?.forEach((l) => {
-                    const target = this.layoutTool.layerCacheMap.get(l.layer);
-                    if (target) {
-                        target.forEach((c1) => {
-                            c1.visible = !l.hidden;
-                        });
-                    }
-                });
-            });
-        } else {
-            // enter
-            const handleTreeData = (
-                components: IComponent[],
-                layers?: ILayer[],
-                isTopLevel = false,
-            ): IOutComponent[] => {
-                const componentDataArray: IOutComponent[] = [];
-                components.forEach((component) => {
-                    if (!component.hidden) {
-                        const polyData: IOutPolygon[] = [];
-                        component.rawPolys.forEach((s: any) => {
-                            const layer = (layers || component.layers)!.find(
-                                (oneLayer) => `(${s.layer},${s.datatype})` === oneLayer.layer,
-                            );
-                            if (!layer?.hidden) {
-                                polyData.push({
-                                    polygonInfo: s.poly,
-                                    layerInfo: layer,
-                                });
-                            }
-                        });
-                        componentDataArray.push({
-                            polyData,
-                            selected: isTopLevel ? false : component.selected,
-                            children: handleTreeData(component.children || [], component.layers || layers),
-                            transform: component.transform,
-                            name: component.name,
-                            ports: component.rscp?.find((d) => d.text === "Ports")?.children,
-                            id: component.id,
-                        });
-                    }
-                });
-                return componentDataArray;
-            };
-            this.layoutTool.initComponents(handleTreeData(components, undefined, true));
-        }
+        this.layoutTool.createObjects(components, commandType, extraData);
     }
 
     private addResizeCanvasEvents(): void {

@@ -2,7 +2,8 @@ import { Viewport } from "pixi-viewport";
 import { Application, Container, Graphics, Point, Rectangle, SCALE_MODES, Text, settings } from "pixi.js";
 import { addViewPort, drawTestLayoutGraphic } from "../utils";
 import Component from "./Component";
-import { IPolygon, ILayer, IOutComponent, IPort } from "..";
+import { IPolygon, ILayer, IOutComponent, IPort, IComponent, IOutPolygon } from "..";
+import { regeneratePort, showComponentPorts } from "./portUtils";
 
 export default class LayoutViewTool {
     app: Application;
@@ -15,6 +16,7 @@ export default class LayoutViewTool {
     resizeCallback?: Function;
     idCacheMap = new Map<string, Container[]>();
     layerCacheMap = new Map<string, Container[]>();
+    portCacheMap = new Map<string, Container[]>();
     reverseContainer = new Container();
 
     portContainer = new Container();
@@ -49,18 +51,91 @@ export default class LayoutViewTool {
         this.containerDom.appendChild(this.app.view);
     }
 
+    createObjects(components: IComponent[], commandType: string, extraData?: any) {
+        if (commandType === "component hidden") {
+            this.idCacheMap.get(extraData.id)!.forEach((c) => (c.visible = !extraData.hidden));
+        } else if (["component check"].includes(commandType)) {
+            if (!extraData.selected) {
+                this.unSelectComponent();
+            } else {
+                const selectedObjectArray = [];
+                const containers = this.idCacheMap.get(extraData.id)!;
+                if (extraData.transform.repetition?.spacing) {
+                    selectedObjectArray.push(...(containers.map((c) => c.children).flat() as Container[]));
+                } else {
+                    selectedObjectArray.push(...containers);
+                }
+                this.selectComponentName = extraData.name;
+                this.selectedObjectArray = selectedObjectArray;
+                this.generateSelectBound();
+
+                // handle port
+                showComponentPorts(this.portContainer, extraData.id, this.portCacheMap);
+            }
+        } else if (commandType === "layer hidden") {
+            components.forEach((c) => {
+                c.layers?.forEach((l) => {
+                    const target = this.layerCacheMap.get(l.layer);
+                    if (target) {
+                        target.forEach((c1) => {
+                            c1.visible = !l.hidden;
+                        });
+                    }
+                });
+            });
+        } else {
+            // enter
+            const handleTreeData = (
+                components: IComponent[],
+                layers?: ILayer[],
+                isTopLevel = false,
+            ): IOutComponent[] => {
+                const componentDataArray: IOutComponent[] = [];
+                components.forEach((component) => {
+                    if (!component.hidden) {
+                        const polyData: IOutPolygon[] = [];
+                        component.rawPolys.forEach((s: any) => {
+                            const layer = (layers || component.layers)!.find(
+                                (oneLayer) => `(${s.layer},${s.datatype})` === oneLayer.layer,
+                            );
+                            if (!layer?.hidden) {
+                                polyData.push({
+                                    polygonInfo: s.poly,
+                                    layerInfo: layer,
+                                });
+                            }
+                        });
+                        componentDataArray.push({
+                            polyData,
+                            selected: component.selected,
+                            children: handleTreeData(component.children || [], component.layers || layers),
+                            transform: component.transform,
+                            name: component.name,
+                            ports: component.rscp?.find((d) => d.text === "Ports")?.children,
+                            id: component.id,
+                        });
+                    }
+                });
+                return componentDataArray;
+            };
+            this.initComponents(handleTreeData(components, undefined, true));
+        }
+    }
+
     initComponents(dataArray: IOutComponent[]) {
         this.textWrapDom.innerHTML = "";
         this.idCacheMap.clear();
         this.layerCacheMap.clear();
+        this.portCacheMap.clear();
         this.componentArray.length = 0;
         this.selectedObjectArray.length = 0;
         const promises: Promise<void>[] = [];
-        const ports: IPort[] = [];
+        const ports: { ports: IPort[]; componentId: string }[] = [];
 
+        let activeComponentId: string | undefined = undefined;
         const generateComponent = (data: IOutComponent) => {
             if (data.ports) {
-                ports.push(...data.ports);
+                ports.push({ ports: data.ports, componentId: data.id });
             }
             const container = new Container();
             container.name = data.name;
@@ -122,6 +197,7 @@ export default class LayoutViewTool {
                 });
             }
             if (data.selected) {
+                activeComponentId = data.id;
                 const containers = this.idCacheMap.get(data.id)!;
                 if (data.transform.repetition?.spacing) {
                     this.selectedObjectArray.push(...(containers.map((c) => c.children).flat() as Container[]));
@@ -189,7 +265,10 @@ export default class LayoutViewTool {
             this.resizeCallback = regenerateTexts;
             this.stage.on("moved", regenerateTexts);
 
-            this.handlePorts(ports);
+            regeneratePort(ports, this.portContainer, this.portCacheMap);
+            if (activeComponentId) {
+                showComponentPorts(this.portContainer, activeComponentId, this.portCacheMap);
+            }
             this.generateSelectBound();
             regenerateTexts();
         });
@@ -223,37 +302,5 @@ export default class LayoutViewTool {
         this.selectedObjectArray.length = 0;
         this.textWrapDom.innerHTML = "";
         this.selectContainer.removeChildren();
-    }
-
-    handlePorts(ports: IPort[]) {
-        function drawPort(portLine: Graphics, p: IPort) {
-            portLine.moveTo(0, -p.spec.width / 2);
-            portLine.lineTo(0, p.spec.width / 2);
-
-            const halfA = 0.2;
-            portLine.moveTo(0, -halfA);
-            portLine.lineTo(0, halfA);
-            portLine.lineTo(1.5 * halfA, 0);
-            portLine.lineTo(0, -halfA);
-        }
-
-        this.portContainer.removeChildren();
-        ports.forEach((p) => {
-            const portLine = new Graphics();
-            portLine.lineStyle(0.12, 0x820080);
-            // portLine.line.native = true;
-            drawPort(portLine, p);
-            portLine.position.set(p.center.x, p.center.y);
-            portLine.rotation = -(p.input_direction * Math.PI) / 180;
-
-            const portLine2 = new Graphics();
-            portLine2.lineStyle(1, 0x820080);
-            portLine2.line.native = true;
-            drawPort(portLine2, p);
-            portLine2.position.set(p.center.x, p.center.y);
-            portLine2.rotation = -(p.input_direction * Math.PI) / 180;
-
-            this.portContainer!.addChild(portLine, portLine2);
-        });
     }
 }
