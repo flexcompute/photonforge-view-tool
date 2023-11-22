@@ -1,5 +1,5 @@
-import { Graphics, Texture, utils, SVGResource, Container, Shader, Program, MIPMAP_MODES, SCALE_MODES } from "pixi.js";
-import { IPolygon, ILayer } from "..";
+import { Graphics, Texture, utils, SVGResource, Container, Shader, Program } from "pixi.js";
+import { ILayer } from "..";
 // https://y2x1d18d8u.larksuite.com/docx/SShzdhIKJoN5Xdx7gEsuRwM8sSp
 export default class Component {
     viewObject = new Container();
