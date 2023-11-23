@@ -50,7 +50,6 @@ export default class Component {
 
                 const vs = `
 attribute vec2 aVertexPosition;
-attribute vec2 aTextureCoord;
 uniform mat3 projectionMatrix;
 uniform mat3 translationMatrix;
 void main() {
