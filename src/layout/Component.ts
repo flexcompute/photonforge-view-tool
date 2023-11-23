@@ -1,4 +1,4 @@
-import { Graphics, Texture, utils, SVGResource, Container, Shader, Program } from "pixi.js";
+import { Graphics, Texture, utils, SVGResource, Container, Shader, Program, Geometry, Mesh } from "pixi.js";
 import { ILayer } from "..";
 // https://y2x1d18d8u.larksuite.com/docx/SShzdhIKJoN5Xdx7gEsuRwM8sSp
 export default class Component {
@@ -7,7 +7,6 @@ export default class Component {
     fillGraphics = new Graphics();
     textureLoadPromise: Promise<void>;
     constructor(data: { polygonInfo: number[][][]; layerInfo?: ILayer }) {
-        this.viewObject.addChild(this.fillGraphics);
         this.viewObject.addChild(this.lineGraphics);
         // this.viewObject.scale.y = -1;
         this.lineGraphics.lineStyle(1, utils.string2hex(data.layerInfo?.color || "#000000"));
@@ -46,28 +45,28 @@ export default class Component {
                 });
                 // const colorMatrixFilter = new filters.ColorMatrixFilter();
                 const rgb = utils.hex2rgb(utils.string2hex(data.layerInfo!.color));
-                // colorMatrixFilter.matrix = [0, 0, 0, rgb[0], 0, 0, 0, 0, rgb[1], 0, 0, 0, 0, rgb[2], 0, 0, 0, 0, 1, 0];
-
-                const vs = `
+                const vertexSrc = `
+precision mediump float;
 attribute vec2 aVertexPosition;
-uniform mat3 projectionMatrix;
 uniform mat3 translationMatrix;
+uniform mat3 projectionMatrix;
 void main() {
     gl_Position = vec4((projectionMatrix * translationMatrix * vec3(aVertexPosition, 1.0)).xy, 0.0, 1.0);
-}
-`;
-                const fs = `
+}`;
+                const fragmentSrc = `
 precision mediump float;
 uniform sampler2D uTT;
-void main(void)
-{
-   float k = texture2D(uTT, fract(vec2(gl_FragCoord.x, -gl_FragCoord.y) / 50.)).a;
-   gl_FragColor = vec4(k * ${rgb[0].toFixed(2)},k * ${rgb[1].toFixed(2)},k * ${rgb[2].toFixed(2)},k);
-}
-`;
-
-                this.fillGraphics.shader = new Shader(new Program(vs, fs), { tint: [], uTT: svgR }); //  = new Filter(undefined, fs, { uTT: svgR });
-                (this.fillGraphics.geometry as any).isBatchable = () => false;
+void main() {
+    float k = texture2D(uTT, fract(vec2(gl_FragCoord.x, -gl_FragCoord.y) / 50.)).a;
+    gl_FragColor = vec4(k * ${rgb[0].toFixed(2)},k * ${rgb[1].toFixed(2)},k * ${rgb[2].toFixed(2)},k);
+}`;
+                const shader = Shader.from(vertexSrc, fragmentSrc, { uTT: svgR });
+                this.fillGraphics.geometry.updateBatches();
+                const geometry = new Geometry()
+                    .addAttribute("aVertexPosition", this.fillGraphics.geometry.points)
+                    .addIndex(this.fillGraphics.geometry.indices);
+                const mesh = new Mesh(geometry, shader);
+                this.viewObject.addChild(mesh);
             };
             if (!svgR.baseTexture.valid) {
                 svgR.baseTexture.on("loaded", () => {
