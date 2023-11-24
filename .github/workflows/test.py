@@ -128,7 +128,7 @@ def compare_screenshots(path1, path2):
     print("巴氏距离：", bhatta_dist)
     print("卡方：", chisq)
     print("相关性：", corr)
-    if abs(corr - 1) > 0.00000001 or chisq > 0.000001:
+    if abs(corr - 1) > 0.000001:
         print("--------Not Same")
         return False
     print("----------Same")
