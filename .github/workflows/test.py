@@ -62,7 +62,7 @@ def check_screenshot():
 
     data = {
         "msg": f"Scheduled Test Job: {error_count} / {len(urls)} cases error",
-        "link": f"https://github.com/flexcompute/flexc-ngui/actions/runs/{os.getenv('GITHUB_RUN_ID')}",
+        "link": f"https://github.com/flexcompute/photonforge-view-tool/actions/runs/{os.getenv('GITHUB_RUN_ID')}",
     }
     response = requests.post(
         "https://www.larksuite.com/flow/api/trigger-webhook/3dfbd547cbdb74b01307d9d884c04e6a",
