@@ -77,12 +77,22 @@ export default class LayoutViewTool {
                     this.idCacheMap.forEach((cs) => {
                         cs.forEach((c) => {
                             c.visible = false;
+                            c.children.forEach((cc) => {
+                                if (!cc.name) {
+                                    cc.visible = false;
+                                }
+                            });
                         });
                     });
                     const setComponentChildrenVisible = (node: any) => {
                         if (node.id) {
                             (this.idCacheMap.get(node.id) as Container[]).forEach((element) => {
                                 element.visible = true;
+                                element.children.forEach((cc: any) => {
+                                    if (!cc.name) {
+                                        cc.visible = true;
+                                    }
+                                });
                             });
                             node.children?.forEach((c: any) => {
                                 setComponentChildrenVisible(c);
@@ -102,6 +112,9 @@ export default class LayoutViewTool {
 
                     this.stage?.removeChild(this.reverseContainer);
                     const rect = this.selectedObjectArray[0].getBounds();
+                    this.selectedObjectArray.forEach((s, i) => {
+                        s.visible = i === 0;
+                    });
                     this.stage?.addChildAt(this.reverseContainer, 0);
                     this.stage?.fit(true, rect.width * 2, rect.height * 2);
                     this.stage?.moveCenter(rect.x + rect.width / 2, rect.y + rect.height / 2);
@@ -287,6 +300,9 @@ export default class LayoutViewTool {
                 this.textWrapDom.innerHTML = "";
                 this.selectedObjectArray.forEach((s) => {
                     const rect = s.getBounds();
+                    if (!s.visible || rect.width === 0) {
+                        return;
+                    }
                     const x = (rect.x + rect.width / 2) / this.app.screen.width;
                     const y = (rect.y + rect.height / 2) / this.app.screen.height;
                     const textNode = document.createTextNode(this.selectComponentName);
@@ -318,15 +334,17 @@ export default class LayoutViewTool {
         this.stage?.removeChild(this.reverseContainer);
         const boundGraphicsArray: Graphics[] = [];
         this.selectedObjectArray.forEach((c: Container) => {
-            const boundGraphics = new Graphics();
-            const rect = c.getBounds();
-            boundGraphics.lineStyle(1, 0x000000);
-            boundGraphics.beginFill(0xffffff, 0.7);
-            boundGraphics.line.native = true;
-            boundGraphics.drawRect(rect.x, rect.y, rect.width, rect.height);
-            boundGraphics.endFill();
+            if (c.visible) {
+                const boundGraphics = new Graphics();
+                const rect = c.getBounds();
+                boundGraphics.lineStyle(1, 0x000000);
+                boundGraphics.beginFill(0xffffff, 0.7);
+                boundGraphics.line.native = true;
+                boundGraphics.drawRect(rect.x, rect.y, rect.width, rect.height);
+                boundGraphics.endFill();
 
-            boundGraphicsArray.push(boundGraphics);
+                boundGraphicsArray.push(boundGraphics);
+            }
         });
         this.stage?.addChildAt(this.reverseContainer, 0);
         boundGraphicsArray.forEach((c) => {
