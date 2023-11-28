@@ -54,24 +54,62 @@ export default class LayoutViewTool {
     createObjects(components: IComponent[], commandType: string, extraData?: any) {
         if (commandType === "component hidden") {
             this.idCacheMap.get(extraData.id)!.forEach((c) => (c.visible = !extraData.hidden));
-        } else if (["component check"].includes(commandType)) {
+        } else if (["component check", "component click"].includes(commandType)) {
             if (!extraData.selected) {
                 this.unSelectComponent();
-            } else {
-                const selectedObjectArray = [];
-                const containers = this.idCacheMap.get(extraData.id)!;
-                if (extraData.transform.repetition?.spacing) {
-                    selectedObjectArray.push(...(containers.map((c) => c.children).flat() as Container[]));
-                } else {
-                    selectedObjectArray.push(...containers);
-                }
-                this.selectComponentName = extraData.name;
-                this.selectedObjectArray = selectedObjectArray;
-                this.generateSelectBound();
-
-                // handle port
-                showComponentPorts(this.portContainer, extraData.id, this.portCacheMap);
             }
+            const selectedObjectArray = [];
+            const containers = this.idCacheMap.get(extraData.id)!;
+            if (extraData.transform.repetition?.spacing) {
+                selectedObjectArray.push(...(containers.map((c) => c.children).flat() as Container[]));
+            } else {
+                selectedObjectArray.push(...containers);
+            }
+            this.selectComponentName = extraData.name;
+            this.selectedObjectArray = selectedObjectArray;
+
+            if ("component click" === commandType) {
+                this.generateSelectBound();
+            } else {
+                // zoom in
+                if (this.selectedObjectArray.length) {
+                    // hide other component
+                    this.idCacheMap.forEach((cs) => {
+                        cs.forEach((c) => {
+                            c.visible = false;
+                        });
+                    });
+                    const setComponentChildrenVisible = (node: any) => {
+                        if (node.id) {
+                            (this.idCacheMap.get(node.id) as Container[]).forEach((element) => {
+                                element.visible = true;
+                            });
+                            node.children?.forEach((c: any) => {
+                                setComponentChildrenVisible(c);
+                            });
+                        }
+                    };
+                    const setComponentParentVisible = (node: any) => {
+                        if (node.id) {
+                            (this.idCacheMap.get(node.id) as Container[]).forEach((element) => {
+                                element.visible = true;
+                            });
+                            setComponentParentVisible(node.parent);
+                        }
+                    };
+                    setComponentChildrenVisible(extraData);
+                    setComponentParentVisible(extraData.parent);
+
+                    this.stage?.removeChild(this.reverseContainer);
+                    const rect = this.selectedObjectArray[0].getBounds();
+                    this.stage?.addChildAt(this.reverseContainer, 0);
+                    this.stage?.fit(true, rect.width * 2, rect.height * 2);
+                    this.stage?.moveCenter(rect.x + rect.width / 2, rect.y + rect.height / 2);
+                }
+            }
+
+            // handle port
+            showComponentPorts(this.portContainer, extraData.id, this.portCacheMap);
         } else if (commandType === "layer hidden") {
             components.forEach((c) => {
                 c.layers?.forEach((l) => {

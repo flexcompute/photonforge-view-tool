@@ -1,5 +1,4 @@
-import { Application, Container } from "pixi.js";
-import { Viewport } from "pixi-viewport";
+import { Application } from "pixi.js";
 import SchematicViewTool from "./SchematicViewTool";
 import LayoutViewTool from "./layout/LayoutViewTool";
 
