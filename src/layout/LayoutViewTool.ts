@@ -118,6 +118,7 @@ export default class LayoutViewTool {
                     this.stage?.addChildAt(this.reverseContainer, 0);
                     this.stage?.fit(true, rect.width * 2, rect.height * 2);
                     this.stage?.moveCenter(rect.x + rect.width / 2, rect.y + rect.height / 2);
+                    this.resizeCallback!();
                 }
             }
 
