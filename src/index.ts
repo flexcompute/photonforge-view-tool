@@ -17,6 +17,7 @@ export interface IComponent {
     name: string;
     transform: any;
     selected: boolean;
+    dblSelected: boolean;
     id: string;
     rscp: { text: string; children: IPort[] }[];
 }
@@ -75,6 +76,7 @@ export interface IOutComponent {
     };
     ports?: IPort[];
     selected: boolean;
+    dblSelected: boolean;
 }
 
 class PhotonForgeViewTool {

@@ -118,11 +118,11 @@ export default class LayoutViewTool {
                     this.stage?.addChildAt(this.reverseContainer, 0);
                     this.stage?.fit(true, rect.width * 2, rect.height * 2);
                     this.stage?.moveCenter(rect.x + rect.width / 2, rect.y + rect.height / 2);
+
+                    // handle port
+                    showComponentPorts(this.portContainer, extraData.id, this.portCacheMap);
                 }
             }
-
-            // handle port
-            showComponentPorts(this.portContainer, extraData.id, this.portCacheMap);
         } else if (commandType === "layer hidden") {
             components.forEach((c) => {
                 c.layers?.forEach((l) => {
@@ -135,6 +135,7 @@ export default class LayoutViewTool {
                 });
             });
         } else {
+            let selectComponentNode: any;
             // enter
             const handleTreeData = (
                 components: IComponent[],
@@ -156,9 +157,13 @@ export default class LayoutViewTool {
                                 });
                             }
                         });
+                        if (component.dblSelected) {
+                            selectComponentNode = component;
+                        }
                         componentDataArray.push({
                             polyData,
                             selected: component.selected,
+                            dblSelected: component.dblSelected,
                             children: handleTreeData(component.children || [], component.layers || layers),
                             transform: component.transform,
                             name: component.name,
@@ -170,6 +175,10 @@ export default class LayoutViewTool {
                 return componentDataArray;
             };
             this.initComponents(handleTreeData(components, undefined, true));
+            // mock check
+            if (selectComponentNode) {
+                this.createObjects(components, "component check", selectComponentNode);
+            }
         }
     }
 
