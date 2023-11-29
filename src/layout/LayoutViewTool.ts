@@ -121,6 +121,7 @@ export default class LayoutViewTool {
 
                     // handle port
                     showComponentPorts(this.portContainer, extraData.id, this.portCacheMap);
+                    this.resizeCallback!();
                 }
             }
         } else if (commandType === "layer hidden") {
