@@ -70,6 +70,15 @@ def check_screenshot():
         headers={"Content-Type": "application/json"},
     )
 
+    # simulation view auto test
+    driver.get(
+        "https://feature-simulation-viewer2222.d3a9gfg7glllfq.amplifyapp.com/simulation-viewer"
+    )
+    element_1 = driver.find_element(
+        By.XPATH,
+        "/html/body/app-root/simulation-viewer/div[1]",
+    )
+
     # script = "var canvas = document.getElementById('three-viewer').children[0];var dataURL = canvas.toDataURL('image/jpeg');return dataURL;"
     # canvas_data_url = driver.execute_script(script)
     # canvas_data = canvas_data_url.split(',')[1]
