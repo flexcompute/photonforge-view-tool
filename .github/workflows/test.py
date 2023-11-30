@@ -10,6 +10,7 @@ import codecs
 import base64
 import requests
 import json
+import traceback
 
 # import imutils
 
@@ -60,23 +61,29 @@ def check_screenshot():
         else:
             error_count += 1
 
+    simulationViewWork = True
+    # simulation view auto test
+    try:
+        driver.get(
+            "https://feature-simulation-viewer.d3a9gfg7glllfq.amplifyapp.com/simulation-viewer"
+        )
+        element_2 = driver.find_element(
+            By.XPATH,
+            "/html/body/app-root/simulation-viewer/div[1]",
+        )
+    except:
+        print("simulation view fail")
+        simulationViewWork = False
+        traceback.print_exc()
+
     data = {
-        "msg": f"Scheduled Test Job: {error_count} / {len(urls)} cases error",
+        "msg": f"Scheduled Test Job: {error_count} / {len(urls)} cases error,  simulation-view {simulationViewWork}",
         "link": f"https://github.com/flexcompute/photonforge-view-tool/actions/runs/{os.getenv('GITHUB_RUN_ID')}",
     }
-    response = requests.post(
+    requests.post(
         "https://www.larksuite.com/flow/api/trigger-webhook/3dfbd547cbdb74b01307d9d884c04e6a",
         data=json.dumps(data),
         headers={"Content-Type": "application/json"},
-    )
-
-    # simulation view auto test
-    driver.get(
-        "https://feature-simulation-viewer2222.d3a9gfg7glllfq.amplifyapp.com/simulation-viewer"
-    )
-    element_1 = driver.find_element(
-        By.XPATH,
-        "/html/body/app-root/simulation-viewer/div[1]",
     )
 
     # script = "var canvas = document.getElementById('three-viewer').children[0];var dataURL = canvas.toDataURL('image/jpeg');return dataURL;"
