@@ -52,6 +52,7 @@ export default class LayoutViewTool {
     }
 
     createObjects(components: IComponent[], commandType: string, extraData?: any) {
+        console.warn("from view tool", components, commandType, extraData);
         if (commandType === "component hidden") {
             this.idCacheMap.get(extraData.id)!.forEach((c) => (c.visible = !extraData.hidden));
         } else if (["component check", "component click"].includes(commandType)) {
@@ -261,10 +262,15 @@ export default class LayoutViewTool {
                     c.rotation = data.transform.rotation;
                 });
             }
-            if (data.selected) {
+            if (data.dblSelected) {
                 activeComponentId = data.id;
+            }
+            if (data.selected) {
+                function ifParentActive(data: any): boolean {
+                    return data.dblSelected || (data.parent && ifParentActive(data.parent));
+                }
                 const containers = this.idCacheMap.get(data.id)!;
-                if (containers[0].children.every((c) => c.visible)) {
+                if (ifParentActive(data)) {
                     if (data.transform.repetition?.spacing) {
                         this.selectedObjectArray.push(...(containers.map((c) => c.children).flat() as Container[]));
                     } else {
@@ -325,6 +331,7 @@ export default class LayoutViewTool {
                     const textElement = document.createElement("span");
                     textElement.appendChild(textNode);
                     textElement.style.position = "absolute";
+                    textElement.style.pointerEvents = "none";
                     textElement.style.left = `${x * 100}%`;
                     textElement.style.top = `${y * 100}%`;
                     textElement.style.userSelect = "none";
