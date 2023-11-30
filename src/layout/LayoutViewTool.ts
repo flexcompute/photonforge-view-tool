@@ -55,19 +55,23 @@ export default class LayoutViewTool {
         if (commandType === "component hidden") {
             this.idCacheMap.get(extraData.id)!.forEach((c) => (c.visible = !extraData.hidden));
         } else if (["component check", "component click"].includes(commandType)) {
-            if (!extraData.selected) {
-                this.unSelectComponent();
+            this.unSelectComponent();
+            this.selectedObjectArray.length = 0;
+            if (extraData) {
+                const containers = this.idCacheMap.get(extraData.id)!;
+                if (
+                    "component check" === commandType ||
+                    containers[0].children.every((c) => c.visible) ||
+                    extraData.dblSelected
+                ) {
+                    if (extraData.transform.repetition?.spacing) {
+                        this.selectedObjectArray.push(...(containers.map((c) => c.children).flat() as Container[]));
+                    } else {
+                        this.selectedObjectArray.push(...containers);
+                    }
+                    this.selectComponentName = extraData.name;
+                }
             }
-            const selectedObjectArray = [];
-            const containers = this.idCacheMap.get(extraData.id)!;
-            if (extraData.transform.repetition?.spacing) {
-                selectedObjectArray.push(...(containers.map((c) => c.children).flat() as Container[]));
-            } else {
-                selectedObjectArray.push(...containers);
-            }
-            this.selectComponentName = extraData.name;
-            this.selectedObjectArray = selectedObjectArray;
-
             if ("component click" === commandType) {
                 this.generateSelectBound();
             } else {
@@ -260,12 +264,14 @@ export default class LayoutViewTool {
             if (data.selected) {
                 activeComponentId = data.id;
                 const containers = this.idCacheMap.get(data.id)!;
-                if (data.transform.repetition?.spacing) {
-                    this.selectedObjectArray.push(...(containers.map((c) => c.children).flat() as Container[]));
-                } else {
-                    this.selectedObjectArray.push(...containers);
+                if (containers[0].children.every((c) => c.visible)) {
+                    if (data.transform.repetition?.spacing) {
+                        this.selectedObjectArray.push(...(containers.map((c) => c.children).flat() as Container[]));
+                    } else {
+                        this.selectedObjectArray.push(...containers);
+                    }
+                    this.selectComponentName = data.name;
                 }
-                this.selectComponentName = data.name;
             }
             return container;
         };
