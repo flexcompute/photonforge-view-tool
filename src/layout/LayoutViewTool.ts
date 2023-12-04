@@ -19,7 +19,7 @@ export default class LayoutViewTool {
     containerDom: HTMLElement;
     textWrapDom: HTMLDivElement;
     resizeCallback?: Function;
-    idCacheMap = new Map<string, Container>();
+    idCacheMap = new Map<string, Container[]>();
     layerCacheMap = new Map<string, Container[]>();
     portCacheMap = new Map<string, IPortInfoInMap[]>();
     reverseContainer = new Container();
@@ -59,18 +59,18 @@ export default class LayoutViewTool {
     createObjects(components: IComponent[], commandType: string, extraData?: any) {
         console.warn(commandType, "extraData:", extraData);
         if (commandType === "component hidden") {
-            this.idCacheMap.get(extraData.id)!.visible = !extraData.hidden;
+            this.idCacheMap.get(extraData.id)!.forEach((c) => (c.visible = !extraData.hidden));
         } else if (["component check", "component click"].includes(commandType)) {
             this.unSelectComponent();
             this.selectedObjectArray.length = 0;
             if (extraData) {
-                const container = this.idCacheMap.get(extraData.id)!;
+                const containers = this.idCacheMap.get(extraData.id)!;
                 if (
                     "component check" === commandType ||
-                    container.children.every((c) => c.visible) ||
+                    containers[0].children.every((c) => c.visible) ||
                     extraData.dblSelected
                 ) {
-                    this.selectedObjectArray.push(container);
+                    this.selectedObjectArray.push(...containers);
                     this.selectComponentName = extraData.name;
                 }
             }
@@ -90,37 +90,43 @@ export default class LayoutViewTool {
                     target.visible = true;
                     this.stage?.fit(true, rect.width * 2, rect.height * 2);
                     this.stage?.moveCenter(rect.x + rect.width / 2, rect.y + rect.height / 2);
+                    showComponentPorts(this.portContainer, extraData.id, this.portCacheMap);
                 } else {
                     this.activeComponentContainer.visible = false;
                     this.reverseContainer.visible = true;
                     // zoom in
                     if (this.selectedObjectArray.length) {
                         // hide other component
-                        this.idCacheMap.forEach((c) => {
-                            c.visible = false;
-                            c.children.forEach((cc) => {
-                                if (!cc.name) {
-                                    cc.visible = false;
-                                }
+                        this.idCacheMap.forEach((cs) => {
+                            cs.forEach((c) => {
+                                c.visible = false;
+                                c.children.forEach((cc) => {
+                                    if (!cc.name) {
+                                        cc.visible = false;
+                                    }
+                                });
                             });
                         });
                         const setComponentChildrenVisible = (node: any) => {
                             if (node.id) {
-                                const element = this.idCacheMap.get(node.id) as Container;
-                                element.visible = true;
-                                element.children.forEach((cc: any) => {
-                                    if (!cc.name) {
-                                        cc.visible = true;
-                                    }
-                                });
-                                node.children?.forEach((c: any) => {
-                                    setComponentChildrenVisible(c);
+                                (this.idCacheMap.get(node.id) as Container[]).forEach((element) => {
+                                    element.visible = true;
+                                    element.children.forEach((cc: any) => {
+                                        if (!cc.name) {
+                                            cc.visible = true;
+                                        }
+                                    });
+                                    node.children?.forEach((c: any) => {
+                                        setComponentChildrenVisible(c);
+                                    });
                                 });
                             }
                         };
                         const setComponentParentVisible = (node: any) => {
                             if (node.id) {
-                                this.idCacheMap.get(node.id)!.visible = true;
+                                (this.idCacheMap.get(node.id) as Container[]).forEach((element) => {
+                                    element.visible = true;
+                                });
                                 setComponentParentVisible(node.parent);
                             }
                         };
@@ -226,7 +232,11 @@ export default class LayoutViewTool {
             }
             const container = new Container();
             container.name = data.name;
-            this.idCacheMap.set(data.id, container);
+            if (this.idCacheMap.get(data.id)) {
+                this.idCacheMap.get(data.id)!.push(container);
+            } else {
+                this.idCacheMap.set(data.id, [container]);
+            }
             if (data.transform.repetition?.spacing) {
                 const { rows, columns, spacing } = data.transform.repetition;
                 for (let i = 0; i < rows; i++) {
@@ -318,6 +328,8 @@ export default class LayoutViewTool {
 
         this.selectContainer.name = "select-bound-container";
         this.portContainer.name = "port=container";
+        this.activeComponentContainer.scale.y = -1;
+        this.activeComponentContainer.visible = true;
 
         const rect = this.reverseContainer.getBounds();
         if (!this.stage) {
@@ -340,7 +352,7 @@ export default class LayoutViewTool {
         this.stage.addChild(this.reverseContainer);
         this.stage.addChild(this.selectContainer);
         this.stage.addChild(this.activeComponentContainer);
-        this.reverseContainer.addChild(this.portContainer);
+        this.stage.addChild(this.portContainer);
 
         const regenerateTexts = () => {
             this.textWrapDom.innerHTML = "";
