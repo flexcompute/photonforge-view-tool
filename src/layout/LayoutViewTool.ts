@@ -4,6 +4,7 @@ import { addViewPort, drawTestLayoutGraphic } from "../utils";
 import Component from "./Component";
 import { IPolygon, ILayer, IOutComponent, IPort, IComponent, IOutPolygon } from "..";
 import { handlePortsCommand, regeneratePort, showComponentPorts } from "./portUtils";
+import { generateActiveComponent } from "./activeUtils";
 
 export interface IPortInfoInMap {
     id: string;
@@ -18,11 +19,11 @@ export default class LayoutViewTool {
     containerDom: HTMLElement;
     textWrapDom: HTMLDivElement;
     resizeCallback?: Function;
-    idCacheMap = new Map<string, Container[]>();
+    idCacheMap = new Map<string, Container>();
     layerCacheMap = new Map<string, Container[]>();
     portCacheMap = new Map<string, IPortInfoInMap[]>();
     reverseContainer = new Container();
-
+    activeComponentContainer = new Container();
     portContainer = new Container();
     selectContainer = new Container();
 
@@ -56,35 +57,46 @@ export default class LayoutViewTool {
     }
 
     createObjects(components: IComponent[], commandType: string, extraData?: any) {
-        console.warn("from view tool", components, commandType, extraData);
+        console.warn(commandType, "extraData:", extraData);
         if (commandType === "component hidden") {
-            this.idCacheMap.get(extraData.id)!.forEach((c) => (c.visible = !extraData.hidden));
+            this.idCacheMap.get(extraData.id)!.visible = !extraData.hidden;
         } else if (["component check", "component click"].includes(commandType)) {
             this.unSelectComponent();
             this.selectedObjectArray.length = 0;
             if (extraData) {
-                const containers = this.idCacheMap.get(extraData.id)!;
+                const container = this.idCacheMap.get(extraData.id)!;
                 if (
                     "component check" === commandType ||
-                    containers[0].children.every((c) => c.visible) ||
+                    container.children.every((c) => c.visible) ||
                     extraData.dblSelected
                 ) {
-                    if (extraData.transform.repetition?.spacing) {
-                        this.selectedObjectArray.push(...(containers.map((c) => c.children).flat() as Container[]));
-                    } else {
-                        this.selectedObjectArray.push(...containers);
-                    }
+                    this.selectedObjectArray.push(container);
                     this.selectComponentName = extraData.name;
                 }
             }
             if ("component click" === commandType) {
                 this.generateSelectBound();
             } else {
-                // zoom in
-                if (this.selectedObjectArray.length) {
-                    // hide other component
-                    this.idCacheMap.forEach((cs) => {
-                        cs.forEach((c) => {
+                const target = this.activeComponentContainer.children.find((c) => c.name === extraData.name);
+                if (target) {
+                    this.activeComponentContainer.visible = true;
+                    this.reverseContainer.visible = false;
+                    this.stage!.removeChild(this.activeComponentContainer);
+                    const rect = target.getBounds();
+                    this.stage!.addChild(this.activeComponentContainer);
+                    this.activeComponentContainer.children.forEach((s) => {
+                        s.visible = false;
+                    });
+                    target.visible = true;
+                    this.stage?.fit(true, rect.width * 2, rect.height * 2);
+                    this.stage?.moveCenter(rect.x + rect.width / 2, rect.y + rect.height / 2);
+                } else {
+                    this.activeComponentContainer.visible = false;
+                    this.reverseContainer.visible = true;
+                    // zoom in
+                    if (this.selectedObjectArray.length) {
+                        // hide other component
+                        this.idCacheMap.forEach((c) => {
                             c.visible = false;
                             c.children.forEach((cc) => {
                                 if (!cc.name) {
@@ -92,45 +104,46 @@ export default class LayoutViewTool {
                                 }
                             });
                         });
-                    });
-                    const setComponentChildrenVisible = (node: any) => {
-                        if (node.id) {
-                            (this.idCacheMap.get(node.id) as Container[]).forEach((element) => {
+                        const setComponentChildrenVisible = (node: any) => {
+                            if (node.id) {
+                                const element = this.idCacheMap.get(node.id) as Container;
                                 element.visible = true;
                                 element.children.forEach((cc: any) => {
                                     if (!cc.name) {
                                         cc.visible = true;
                                     }
                                 });
-                            });
-                            node.children?.forEach((c: any) => {
-                                setComponentChildrenVisible(c);
-                            });
-                        }
-                    };
-                    const setComponentParentVisible = (node: any) => {
-                        if (node.id) {
-                            (this.idCacheMap.get(node.id) as Container[]).forEach((element) => {
-                                element.visible = true;
-                            });
-                            setComponentParentVisible(node.parent);
-                        }
-                    };
-                    setComponentChildrenVisible(extraData);
-                    setComponentParentVisible(extraData.parent);
+                                node.children?.forEach((c: any) => {
+                                    setComponentChildrenVisible(c);
+                                });
+                            }
+                        };
+                        const setComponentParentVisible = (node: any) => {
+                            if (node.id) {
+                                this.idCacheMap.get(node.id)!.visible = true;
+                                setComponentParentVisible(node.parent);
+                            }
+                        };
+                        setComponentChildrenVisible(extraData);
+                        setComponentParentVisible(extraData.parent);
 
-                    this.stage?.removeChild(this.reverseContainer);
-                    const rect = this.selectedObjectArray[0].getBounds();
-                    this.selectedObjectArray.forEach((s, i) => {
-                        s.visible = i === 0;
-                    });
-                    this.stage?.addChildAt(this.reverseContainer, 0);
-                    this.stage?.fit(true, rect.width * 2, rect.height * 2);
-                    this.stage?.moveCenter(rect.x + rect.width / 2, rect.y + rect.height / 2);
+                        this.stage?.removeChild(this.reverseContainer);
+                        const rect = (
+                            this.selectedObjectArray[0].children.every((cc) => cc.name === "repetition-container")
+                                ? this.selectedObjectArray[0].children[0]
+                                : this.selectedObjectArray[0]
+                        ).getBounds();
+                        this.selectedObjectArray.forEach((s, i) => {
+                            s.visible = i === 0;
+                        });
+                        this.stage?.addChildAt(this.reverseContainer, 0);
+                        this.stage?.fit(true, rect.width * 2, rect.height * 2);
+                        this.stage?.moveCenter(rect.x + rect.width / 2, rect.y + rect.height / 2);
 
-                    // handle port
-                    showComponentPorts(this.portContainer, extraData.id, this.portCacheMap);
-                    this.resizeCallback!();
+                        // handle port
+                        showComponentPorts(this.portContainer, extraData.id, this.portCacheMap);
+                        this.resizeCallback?.();
+                    }
                 }
             }
         } else if (commandType === "layer hidden") {
@@ -202,30 +215,30 @@ export default class LayoutViewTool {
         this.portCacheMap.clear();
         this.componentArray.length = 0;
         this.selectedObjectArray.length = 0;
+        this.activeComponentContainer.removeChildren();
         const promises: Promise<void>[] = [];
         const ports: { ports: IPort[]; componentId: string }[] = [];
 
         let activeComponentId: string | undefined = undefined;
-        const generateComponent = (data: IOutComponent) => {
+        const generateComponent = (data: IOutComponent, isTopLevel = false) => {
             if (data.ports) {
                 ports.push({ ports: data.ports, componentId: data.id });
             }
             const container = new Container();
             container.name = data.name;
-            if (this.idCacheMap.get(data.id)) {
-                this.idCacheMap.get(data.id)!.push(container);
-            } else {
-                this.idCacheMap.set(data.id, [container]);
-            }
+            this.idCacheMap.set(data.id, container);
             if (data.transform.repetition?.spacing) {
                 const { rows, columns, spacing } = data.transform.repetition;
                 for (let i = 0; i < rows; i++) {
                     for (let j = 0; j < columns; j++) {
+                        const container2 = new Container();
+                        container2.name = "repetition-container";
+                        container.addChild(container2);
                         data.polyData.forEach((p) => {
                             const comp = new Component(p);
                             promises.push(comp.textureLoadPromise);
                             comp.viewObject.position.set(j * spacing[0], i * spacing[1]);
-                            container.addChild(comp.viewObject);
+                            container2.addChild(comp.viewObject);
 
                             if (p.layerInfo?.layer) {
                                 if (this.layerCacheMap.get(p.layerInfo.layer)) {
@@ -238,7 +251,7 @@ export default class LayoutViewTool {
                         data.children.forEach((data1) => {
                             const childrenContainer = generateComponent(data1);
                             childrenContainer.position.set(j * spacing[0], i * spacing[1]);
-                            container.addChild(childrenContainer);
+                            container2.addChild(childrenContainer);
                         });
                     }
                 }
@@ -276,25 +289,28 @@ export default class LayoutViewTool {
                 function ifParentActive(data: any): boolean {
                     return data.dblSelected || (data.parent && ifParentActive(data.parent));
                 }
-                const containers = this.idCacheMap.get(data.id)!;
+                const container = this.idCacheMap.get(data.id)!;
                 if (ifParentActive(data)) {
-                    if (data.transform.repetition?.spacing) {
-                        this.selectedObjectArray.push(...(containers.map((c) => c.children).flat() as Container[]));
-                    } else {
-                        this.selectedObjectArray.push(...containers);
-                    }
+                    this.selectedObjectArray.push(container);
                     this.selectComponentName = data.name;
                 }
+            }
+            if (!isTopLevel) {
+                generateActiveComponent(this.activeComponentContainer, data, generateComponent);
             }
             return container;
         };
         dataArray.forEach((data) => {
-            this.componentArray.push(generateComponent(data));
+            this.componentArray.push(generateComponent(data, true));
         });
+        regeneratePort(ports, this.portContainer, this.portCacheMap);
         await Promise.all(promises);
-        this.reverseContainer = new Container();
         this.reverseContainer.name = "reverse-container";
         this.reverseContainer.scale.y = -1;
+
+        this.activeComponentContainer.name = "active-component-container";
+        this.activeComponentContainer.scale.y = -1;
+        this.activeComponentContainer.visible = false;
 
         this.componentArray.forEach((c) => {
             this.reverseContainer.addChild(c);
@@ -323,11 +339,12 @@ export default class LayoutViewTool {
 
         this.stage.addChild(this.reverseContainer);
         this.stage.addChild(this.selectContainer);
+        this.stage.addChild(this.activeComponentContainer);
         this.reverseContainer.addChild(this.portContainer);
 
         const regenerateTexts = () => {
             this.textWrapDom.innerHTML = "";
-            this.selectedObjectArray.forEach((s) => {
+            this.selectContainer.children.forEach((s) => {
                 const rect = s.getBounds();
                 if (!s.visible || rect.width === 0) {
                     return;
@@ -349,7 +366,6 @@ export default class LayoutViewTool {
         this.resizeCallback = regenerateTexts;
         this.stage.on("moved", regenerateTexts);
 
-        regeneratePort(ports, this.portContainer, this.portCacheMap);
         if (activeComponentId) {
             showComponentPorts(this.portContainer, activeComponentId, this.portCacheMap);
         }
@@ -364,15 +380,18 @@ export default class LayoutViewTool {
         const boundGraphicsArray: Graphics[] = [];
         this.selectedObjectArray.forEach((c: Container) => {
             if (c.visible) {
-                const boundGraphics = new Graphics();
-                const rect = c.getBounds();
-                boundGraphics.lineStyle(1, 0x000000);
-                boundGraphics.beginFill(0xffffff, 0.7);
-                boundGraphics.line.native = true;
-                boundGraphics.drawRect(rect.x, rect.y, rect.width, rect.height);
-                boundGraphics.endFill();
+                const targetOs = c.children.every((cc) => cc.name === "repetition-container") ? c.children : [c];
+                targetOs.forEach((cc) => {
+                    const boundGraphics = new Graphics();
+                    const rect = cc.getBounds();
+                    boundGraphics.lineStyle(1, 0x000000);
+                    boundGraphics.beginFill(0xffffff, 0.7);
+                    boundGraphics.line.native = true;
+                    boundGraphics.drawRect(rect.x, rect.y, rect.width, rect.height);
+                    boundGraphics.endFill();
 
-                boundGraphicsArray.push(boundGraphics);
+                    boundGraphicsArray.push(boundGraphics);
+                });
             }
         });
         this.stage?.addChildAt(this.reverseContainer, 0);
