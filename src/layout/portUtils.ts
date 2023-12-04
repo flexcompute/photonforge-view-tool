@@ -1,10 +1,11 @@
 import { Container, Graphics } from "pixi.js";
-import { IPort } from "..";
+import { IComponent, IPort } from "..";
+import { IPortInfoInMap } from "./LayoutViewTool";
 
 export function regeneratePort(
     portsData: { ports: IPort[]; componentId: string }[],
     portContainer: Container,
-    idCacheMap: Map<string, Container[]>,
+    portCacheMap: Map<string, IPortInfoInMap[]>,
 ) {
     function drawPort(portLine: Graphics, p: IPort) {
         portLine.moveTo(0, -p.spec.width / 2);
@@ -20,13 +21,13 @@ export function regeneratePort(
     portContainer.removeChildren();
     portsData.forEach((pd) => {
         const { ports } = pd;
-        const portArray: Container[] = [];
-        idCacheMap.set(pd.componentId, portArray);
+        const portArray: { id: string; obj: Container }[] = [];
+        portCacheMap.set(pd.componentId, portArray);
         ports.forEach((p) => {
             const onePortContainer = new Container();
             onePortContainer.name = "one port";
             onePortContainer.visible = false;
-            portArray.push(onePortContainer);
+            portArray.push({ id: p.id, obj: onePortContainer });
 
             const portLine = new Graphics();
             portLine.lineStyle(0.12, 0x820080);
@@ -48,14 +49,52 @@ export function regeneratePort(
     });
 }
 
-export function showComponentPorts(container: Container, componentId: string, portCacheMap: Map<string, Container[]>) {
+export function showComponentPorts(
+    container: Container,
+    componentId: string,
+    portCacheMap: Map<string, IPortInfoInMap[]>,
+) {
     container.children.forEach((c) => {
         c.visible = false;
     });
-    const portContainers = portCacheMap.get(componentId)!;
+    const portContainers = portCacheMap.get(componentId)!.map((d) => d.obj);
     if (portContainers) {
         portContainers.forEach((p) => {
             p.visible = true;
         });
+    }
+}
+
+export function handlePortsCommand(
+    commandType: "port add" | "port remove",
+    targetComponent: IComponent,
+    portCacheMap: Map<string, IPortInfoInMap[]>,
+    portContainer: Container,
+) {
+    if (commandType === "port remove") {
+        const ports = portCacheMap.get(targetComponent.id)!;
+        const newPorts = targetComponent.rscp?.find((d) => d.text === "Ports")?.children;
+
+        if (newPorts) {
+            ports.forEach((p) => {
+                if (!newPorts.map((d) => d.id).includes(p.id)) {
+                    p.obj.parent.removeChild(p.obj);
+                    p.obj.destroy();
+                    portCacheMap.delete(p.id);
+                }
+            });
+        }
+    } else {
+        regeneratePort(
+            [
+                {
+                    componentId: targetComponent.id,
+                    ports: targetComponent.rscp?.find((d) => d.text === "Ports")!.children!,
+                },
+            ],
+            portContainer,
+            portCacheMap,
+        );
+        showComponentPorts(portContainer, targetComponent.id, portCacheMap);
     }
 }

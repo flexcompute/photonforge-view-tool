@@ -3,8 +3,12 @@ import { Application, Container, Graphics, Point, Rectangle, SCALE_MODES, Text, 
 import { addViewPort, drawTestLayoutGraphic } from "../utils";
 import Component from "./Component";
 import { IPolygon, ILayer, IOutComponent, IPort, IComponent, IOutPolygon } from "..";
-import { regeneratePort, showComponentPorts } from "./portUtils";
+import { handlePortsCommand, regeneratePort, showComponentPorts } from "./portUtils";
 
+export interface IPortInfoInMap {
+    id: string;
+    obj: Container;
+}
 export default class LayoutViewTool {
     app: Application;
     stage?: Viewport;
@@ -16,7 +20,7 @@ export default class LayoutViewTool {
     resizeCallback?: Function;
     idCacheMap = new Map<string, Container[]>();
     layerCacheMap = new Map<string, Container[]>();
-    portCacheMap = new Map<string, Container[]>();
+    portCacheMap = new Map<string, IPortInfoInMap[]>();
     reverseContainer = new Container();
 
     portContainer = new Container();
@@ -140,6 +144,8 @@ export default class LayoutViewTool {
                     }
                 });
             });
+        } else if (commandType.includes("port")) {
+            handlePortsCommand(commandType as any, extraData, this.portCacheMap, this.portContainer);
         } else {
             let selectComponentNode: any;
             // enter
@@ -180,15 +186,16 @@ export default class LayoutViewTool {
                 });
                 return componentDataArray;
             };
-            this.initComponents(handleTreeData(components, undefined, true));
-            // mock check
-            if (selectComponentNode) {
-                this.createObjects(components, "component check", selectComponentNode);
-            }
+            this.initComponents(handleTreeData(components, undefined, true)).then(() => {
+                // mock check
+                // if (selectComponentNode) {
+                //     this.createObjects(components, "component check", selectComponentNode);
+                // }
+            });
         }
     }
 
-    initComponents(dataArray: IOutComponent[]) {
+    async initComponents(dataArray: IOutComponent[]) {
         this.textWrapDom.innerHTML = "";
         this.idCacheMap.clear();
         this.layerCacheMap.clear();
@@ -284,71 +291,70 @@ export default class LayoutViewTool {
         dataArray.forEach((data) => {
             this.componentArray.push(generateComponent(data));
         });
-        Promise.all(promises).then(() => {
-            this.reverseContainer = new Container();
-            this.reverseContainer.name = "reverse-container";
-            this.reverseContainer.scale.y = -1;
+        await Promise.all(promises);
+        this.reverseContainer = new Container();
+        this.reverseContainer.name = "reverse-container";
+        this.reverseContainer.scale.y = -1;
 
-            this.componentArray.forEach((c) => {
-                this.reverseContainer.addChild(c);
-            });
-
-            this.selectContainer.name = "select-bound-container";
-            this.portContainer.name = "port=container";
-
-            const rect = this.reverseContainer.getBounds();
-            if (!this.stage) {
-                this.stage = addViewPort(
-                    this.app,
-                    this.w,
-                    this.h,
-                    0.4 * Math.min(this.w / rect.width, this.h / rect.height),
-                    {
-                        x: rect.x + rect.width / 2,
-                        y: rect.y + rect.height / 2,
-                    },
-                );
-            } else {
-                this.stage.scale.set(0.4 * Math.min(this.w / rect.width, this.h / rect.height));
-                this.stage.moveCenter(rect.x + rect.width / 2, rect.y + rect.height / 2);
-            }
-            this.stage.removeChildren();
-
-            this.stage.addChild(this.reverseContainer);
-            this.stage.addChild(this.selectContainer);
-            this.reverseContainer.addChild(this.portContainer);
-
-            const regenerateTexts = () => {
-                this.textWrapDom.innerHTML = "";
-                this.selectedObjectArray.forEach((s) => {
-                    const rect = s.getBounds();
-                    if (!s.visible || rect.width === 0) {
-                        return;
-                    }
-                    const x = (rect.x + rect.width / 2) / this.app.screen.width;
-                    const y = (rect.y + rect.height / 2) / this.app.screen.height;
-                    const textNode = document.createTextNode(this.selectComponentName);
-                    const textElement = document.createElement("span");
-                    textElement.appendChild(textNode);
-                    textElement.style.position = "absolute";
-                    textElement.style.pointerEvents = "none";
-                    textElement.style.left = `${x * 100}%`;
-                    textElement.style.top = `${y * 100}%`;
-                    textElement.style.userSelect = "none";
-                    textElement.style.transform = "translate(-50%, -50%)";
-                    this.textWrapDom.appendChild(textElement);
-                });
-            };
-            this.resizeCallback = regenerateTexts;
-            this.stage.on("moved", regenerateTexts);
-
-            regeneratePort(ports, this.portContainer, this.portCacheMap);
-            if (activeComponentId) {
-                showComponentPorts(this.portContainer, activeComponentId, this.portCacheMap);
-            }
-            this.generateSelectBound();
-            regenerateTexts();
+        this.componentArray.forEach((c) => {
+            this.reverseContainer.addChild(c);
         });
+
+        this.selectContainer.name = "select-bound-container";
+        this.portContainer.name = "port=container";
+
+        const rect = this.reverseContainer.getBounds();
+        if (!this.stage) {
+            this.stage = addViewPort(
+                this.app,
+                this.w,
+                this.h,
+                0.4 * Math.min(this.w / rect.width, this.h / rect.height),
+                {
+                    x: rect.x + rect.width / 2,
+                    y: rect.y + rect.height / 2,
+                },
+            );
+        } else {
+            this.stage.scale.set(0.4 * Math.min(this.w / rect.width, this.h / rect.height));
+            this.stage.moveCenter(rect.x + rect.width / 2, rect.y + rect.height / 2);
+        }
+        this.stage.removeChildren();
+
+        this.stage.addChild(this.reverseContainer);
+        this.stage.addChild(this.selectContainer);
+        this.reverseContainer.addChild(this.portContainer);
+
+        const regenerateTexts = () => {
+            this.textWrapDom.innerHTML = "";
+            this.selectedObjectArray.forEach((s) => {
+                const rect = s.getBounds();
+                if (!s.visible || rect.width === 0) {
+                    return;
+                }
+                const x = (rect.x + rect.width / 2) / this.app.screen.width;
+                const y = (rect.y + rect.height / 2) / this.app.screen.height;
+                const textNode = document.createTextNode(this.selectComponentName);
+                const textElement = document.createElement("span");
+                textElement.appendChild(textNode);
+                textElement.style.position = "absolute";
+                textElement.style.pointerEvents = "none";
+                textElement.style.left = `${x * 100}%`;
+                textElement.style.top = `${y * 100}%`;
+                textElement.style.userSelect = "none";
+                textElement.style.transform = "translate(-50%, -50%)";
+                this.textWrapDom.appendChild(textElement);
+            });
+        };
+        this.resizeCallback = regenerateTexts;
+        this.stage.on("moved", regenerateTexts);
+
+        regeneratePort(ports, this.portContainer, this.portCacheMap);
+        if (activeComponentId) {
+            showComponentPorts(this.portContainer, activeComponentId, this.portCacheMap);
+        }
+        this.generateSelectBound();
+        regenerateTexts();
     }
 
     generateSelectBound() {

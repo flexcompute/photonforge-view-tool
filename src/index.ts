@@ -25,6 +25,7 @@ export interface IComponent {
 export interface IPort {
     center: IXY;
     input_direction: number;
+    id: string;
     spec: {
         description: string;
         limits: number[];
