@@ -1,13 +1,15 @@
 import { Viewport } from "pixi-viewport";
-import { Application, Container, Graphics, Point, Rectangle, SCALE_MODES, Text, settings } from "pixi.js";
-import { addViewPort, drawTestLayoutGraphic } from "../utils";
+import { Application, Container, DisplayObject, Graphics } from "pixi.js";
+import { addViewPort } from "../utils";
 import Component from "./Component";
 import { IPolygon, ILayer, IOutComponent, IPort, IComponent, IOutPolygon } from "..";
 import { handlePortsCommand, regeneratePort, showComponentPorts } from "./portUtils";
 import { generateActiveComponent } from "./activeUtils";
 
+const DOUBLE_CLICK = "component check";
+const SINGLE_CLICK = "component click";
 export interface IPortInfoInMap {
-    id: string;
+    name: string;
     obj: Container;
 }
 export default class LayoutViewTool {
@@ -60,13 +62,14 @@ export default class LayoutViewTool {
         console.warn(commandType, "extraData:", extraData);
         if (commandType === "component hidden") {
             this.idCacheMap.get(extraData.id)!.forEach((c) => (c.visible = !extraData.hidden));
-        } else if (["component check", "component click"].includes(commandType)) {
+        } else if ([DOUBLE_CLICK, SINGLE_CLICK].includes(commandType)) {
+            // check is dbclick, click is single click(left red)
             this.unSelectComponent();
             this.selectedObjectArray.length = 0;
             if (extraData) {
                 const containers = this.idCacheMap.get(extraData.id)!;
                 if (
-                    "component check" === commandType ||
+                    DOUBLE_CLICK === commandType ||
                     containers[0].children.every((c) => c.visible) ||
                     extraData.dblSelected
                 ) {
@@ -74,23 +77,24 @@ export default class LayoutViewTool {
                     this.selectComponentName = extraData.name;
                 }
             }
-            if ("component click" === commandType) {
+            if (SINGLE_CLICK === commandType) {
                 this.generateSelectBound();
             } else {
                 const target = this.activeComponentContainer.children.find((c) => c.name === extraData.name);
                 if (target) {
                     this.activeComponentContainer.visible = true;
                     this.reverseContainer.visible = false;
+                    const activeContainerIndex = this.stage!.children.indexOf(this.activeComponentContainer);
                     this.stage!.removeChild(this.activeComponentContainer);
                     const rect = target.getBounds();
-                    this.stage!.addChild(this.activeComponentContainer);
+                    this.stage!.addChildAt(this.activeComponentContainer, activeContainerIndex);
                     this.activeComponentContainer.children.forEach((s) => {
                         s.visible = false;
                     });
                     target.visible = true;
                     this.stage?.fit(true, rect.width * 2, rect.height * 2);
                     this.stage?.moveCenter(rect.x + rect.width / 2, rect.y + rect.height / 2);
-                    showComponentPorts(this.portContainer, extraData.id, this.portCacheMap);
+                    showComponentPorts(this.portContainer, extraData.name, this.portCacheMap);
                 } else {
                     this.activeComponentContainer.visible = false;
                     this.reverseContainer.visible = true;
@@ -147,7 +151,7 @@ export default class LayoutViewTool {
                         this.stage?.moveCenter(rect.x + rect.width / 2, rect.y + rect.height / 2);
 
                         // handle port
-                        showComponentPorts(this.portContainer, extraData.id, this.portCacheMap);
+                        showComponentPorts(this.portContainer, extraData.name, this.portCacheMap);
                         this.resizeCallback?.();
                     }
                 }
@@ -223,12 +227,12 @@ export default class LayoutViewTool {
         this.selectedObjectArray.length = 0;
         this.activeComponentContainer.removeChildren();
         const promises: Promise<void>[] = [];
-        const ports: { ports: IPort[]; componentId: string }[] = [];
+        const ports: { ports: IPort[]; componentName: string }[] = [];
 
-        let activeComponentId: string | undefined = undefined;
+        let activeComponentName: string | undefined = undefined;
         const generateComponent = (data: IOutComponent, isTopLevel = false) => {
             if (data.ports) {
-                ports.push({ ports: data.ports, componentId: data.id });
+                ports.push({ ports: data.ports, componentName: data.name });
             }
             const container = new Container();
             container.name = data.name;
@@ -293,15 +297,15 @@ export default class LayoutViewTool {
                 });
             }
             if (data.dblSelected) {
-                activeComponentId = data.id;
+                activeComponentName = data.name;
             }
             if (data.selected) {
                 function ifParentActive(data: any): boolean {
                     return data.dblSelected || (data.parent && ifParentActive(data.parent));
                 }
-                const container = this.idCacheMap.get(data.id)!;
+                const containers = this.idCacheMap.get(data.id)!;
                 if (ifParentActive(data)) {
-                    this.selectedObjectArray.push(container);
+                    this.selectedObjectArray.push(...containers);
                     this.selectComponentName = data.name;
                 }
             }
@@ -318,7 +322,6 @@ export default class LayoutViewTool {
         this.reverseContainer.name = "reverse-container";
         this.reverseContainer.scale.y = -1;
 
-        this.activeComponentContainer.name = "active-component-container";
         this.activeComponentContainer.scale.y = -1;
         this.activeComponentContainer.visible = false;
 
@@ -328,8 +331,7 @@ export default class LayoutViewTool {
 
         this.selectContainer.name = "select-bound-container";
         this.portContainer.name = "port=container";
-        this.activeComponentContainer.scale.y = -1;
-        this.activeComponentContainer.visible = true;
+        this.activeComponentContainer.name = "active-component-container";
 
         const rect = this.reverseContainer.getBounds();
         if (!this.stage) {
@@ -350,8 +352,8 @@ export default class LayoutViewTool {
         this.stage.removeChildren();
 
         this.stage.addChild(this.reverseContainer);
-        this.stage.addChild(this.selectContainer);
         this.stage.addChild(this.activeComponentContainer);
+        this.stage.addChild(this.selectContainer);
         this.stage.addChild(this.portContainer);
 
         const regenerateTexts = () => {
@@ -378,8 +380,8 @@ export default class LayoutViewTool {
         this.resizeCallback = regenerateTexts;
         this.stage.on("moved", regenerateTexts);
 
-        if (activeComponentId) {
-            showComponentPorts(this.portContainer, activeComponentId, this.portCacheMap);
+        if (activeComponentName) {
+            showComponentPorts(this.portContainer, activeComponentName, this.portCacheMap);
         }
         this.generateSelectBound();
         regenerateTexts();
@@ -387,30 +389,43 @@ export default class LayoutViewTool {
 
     generateSelectBound() {
         this.selectContainer.removeChildren();
+        if (this.stage) {
+            const activeContainerIndex = this.stage.children.indexOf(this.activeComponentContainer);
+            this.stage.removeChild(this.reverseContainer);
+            this.stage.removeChild(this.activeComponentContainer);
+            const boundGraphicsArray: Graphics[] = [];
+            this.selectedObjectArray.forEach((c: Container) => {
+                if (c.visible) {
+                    const targetOs = c.children.every((cc) => cc.name === "repetition-container") ? c.children : [c];
+                    function getParentVisible(obj: DisplayObject): boolean {
+                        if (obj.parent) {
+                            return obj.visible && getParentVisible(obj.parent);
+                        } else {
+                            return obj.visible;
+                        }
+                    }
+                    targetOs.forEach((cc) => {
+                        if (getParentVisible(cc)) {
+                            const boundGraphics = new Graphics();
+                            const rect = cc.getBounds();
+                            boundGraphics.lineStyle(1, 0x000000);
+                            boundGraphics.beginFill(0xffffff, 0.7);
+                            boundGraphics.line.native = true;
+                            boundGraphics.drawRect(rect.x, rect.y, rect.width, rect.height);
+                            boundGraphics.endFill();
 
-        this.stage?.removeChild(this.reverseContainer);
-        const boundGraphicsArray: Graphics[] = [];
-        this.selectedObjectArray.forEach((c: Container) => {
-            if (c.visible) {
-                const targetOs = c.children.every((cc) => cc.name === "repetition-container") ? c.children : [c];
-                targetOs.forEach((cc) => {
-                    const boundGraphics = new Graphics();
-                    const rect = cc.getBounds();
-                    boundGraphics.lineStyle(1, 0x000000);
-                    boundGraphics.beginFill(0xffffff, 0.7);
-                    boundGraphics.line.native = true;
-                    boundGraphics.drawRect(rect.x, rect.y, rect.width, rect.height);
-                    boundGraphics.endFill();
-
-                    boundGraphicsArray.push(boundGraphics);
-                });
-            }
-        });
-        this.stage?.addChildAt(this.reverseContainer, 0);
-        boundGraphicsArray.forEach((c) => {
-            this.selectContainer.addChild(c);
-        });
-        this.resizeCallback?.(boundGraphicsArray, this.selectComponentName);
+                            boundGraphicsArray.push(boundGraphics);
+                        }
+                    });
+                }
+            });
+            this.stage.addChildAt(this.reverseContainer, 0);
+            this.stage.addChildAt(this.activeComponentContainer, activeContainerIndex);
+            boundGraphicsArray.forEach((c) => {
+                this.selectContainer.addChild(c);
+            });
+            this.resizeCallback?.(boundGraphicsArray, this.selectComponentName);
+        }
     }
 
     unSelectComponent() {

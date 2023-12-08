@@ -3,7 +3,7 @@ import { IComponent, IPort } from "..";
 import { IPortInfoInMap } from "./LayoutViewTool";
 
 export function regeneratePort(
-    portsData: { ports: IPort[]; componentId: string }[],
+    portsData: { ports: IPort[]; componentName: string }[],
     portContainer: Container,
     portCacheMap: Map<string, IPortInfoInMap[]>,
 ) {
@@ -21,13 +21,13 @@ export function regeneratePort(
     portContainer.removeChildren();
     portsData.forEach((pd) => {
         const { ports } = pd;
-        const portArray: { id: string; obj: Container }[] = [];
-        portCacheMap.set(pd.componentId, portArray);
+        const portArray: { name: string; obj: Container }[] = [];
+        portCacheMap.set(pd.componentName, portArray);
         ports.forEach((p) => {
             const onePortContainer = new Container();
             onePortContainer.name = "one port";
             onePortContainer.visible = false;
-            portArray.push({ id: p.id, obj: onePortContainer });
+            portArray.push({ name: pd.componentName, obj: onePortContainer });
 
             const portLine = new Graphics();
             portLine.lineStyle(0.12, 0x820080);
@@ -51,13 +51,13 @@ export function regeneratePort(
 
 export function showComponentPorts(
     container: Container,
-    componentId: string,
+    componentName: string,
     portCacheMap: Map<string, IPortInfoInMap[]>,
 ) {
     container.children.forEach((c) => {
         c.visible = false;
     });
-    const portContainers = portCacheMap.get(componentId)!.map((d) => d.obj);
+    const portContainers = portCacheMap.get(componentName)!.map((d) => d.obj);
     if (portContainers) {
         portContainers.forEach((p) => {
             p.visible = true;
@@ -72,15 +72,15 @@ export function handlePortsCommand(
     portContainer: Container,
 ) {
     if (commandType === "port remove") {
-        const ports = portCacheMap.get(targetComponent.id)!;
+        const ports = portCacheMap.get(targetComponent.name)!;
         const newPorts = targetComponent.rscp?.find((d) => d.text === "Ports")?.children;
 
         if (newPorts) {
             ports.forEach((p) => {
-                if (!newPorts.map((d) => d.id).includes(p.id)) {
+                if (!newPorts.map((d) => d.id).includes(p.name)) {
                     p.obj.parent.removeChild(p.obj);
                     p.obj.destroy();
-                    portCacheMap.delete(p.id);
+                    portCacheMap.delete(p.name);
                 }
             });
         }
@@ -88,13 +88,13 @@ export function handlePortsCommand(
         regeneratePort(
             [
                 {
-                    componentId: targetComponent.id,
+                    componentName: targetComponent.name,
                     ports: targetComponent.rscp?.find((d) => d.text === "Ports")!.children!,
                 },
             ],
             portContainer,
             portCacheMap,
         );
-        showComponentPorts(portContainer, targetComponent.id, portCacheMap);
+        showComponentPorts(portContainer, targetComponent.name, portCacheMap);
     }
 }
