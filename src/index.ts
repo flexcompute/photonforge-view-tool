@@ -20,6 +20,7 @@ export interface IComponent {
     dblSelected: boolean;
     id: string;
     rscp: { text: string; children: IPort[] }[];
+    detectPorts: IPort[];
 }
 
 export interface IPort {

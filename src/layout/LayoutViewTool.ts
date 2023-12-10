@@ -168,7 +168,7 @@ export default class LayoutViewTool {
                 });
             });
         } else if (commandType.includes("port")) {
-            handlePortsCommand(commandType as any, extraData, this.portCacheMap, this.portContainer);
+            handlePortsCommand(commandType as any, extraData, this.portCacheMap, this.portContainer, this.stage!);
         } else {
             let selectComponentNode: any;
             // enter
