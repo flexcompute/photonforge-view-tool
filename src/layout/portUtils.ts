@@ -71,11 +71,12 @@ export function showComponentPorts(
 }
 
 export function handlePortsCommand(
-    commandType: "port add" | "port remove" | "detect ports" | "undetect ports",
+    commandType: "port add" | "port remove" | "detect ports" | "undetect ports" | "detect ports finished",
     targetComponent: IComponent,
     portCacheMap: Map<string, IPortInfoInMap[]>,
     portContainer: Container,
     stage: Viewport,
+    detectPortsCallback: (port: any) => {},
 ) {
     if (commandType === "port remove") {
         const ports = portCacheMap.get(targetComponent.name)!;
@@ -86,7 +87,6 @@ export function handlePortsCommand(
                 if (!newPorts.map((d) => d.id).includes(p.name)) {
                     p.obj.parent.removeChild(p.obj);
                     p.obj.destroy();
-                    portCacheMap.delete(p.name);
                 }
             });
         }
@@ -103,8 +103,8 @@ export function handlePortsCommand(
         );
         showComponentPorts(portContainer, targetComponent.name, portCacheMap);
     } else if (commandType === "detect ports") {
-        addDetectedPorts(stage, targetComponent.detectPorts);
-    } else if (commandType === "undetect ports") {
+        addDetectedPorts(stage, targetComponent.detectPorts, detectPortsCallback);
+    } else if (commandType === "undetect ports" || commandType === "detect ports finished") {
         removeDetectedPorts(stage);
     }
 }

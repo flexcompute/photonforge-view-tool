@@ -84,9 +84,10 @@ export interface IOutComponent {
 class PhotonForgeViewTool {
     schematicApp?: Application;
     layoutTool: LayoutViewTool;
-    constructor(param: { layoutContainerId: string }) {
+    runningPromise?: Promise<void>;
+    constructor(param: { layoutContainerId: string; detectPortsCallback: (port: any) => {} }) {
         console.log("view tool init OK");
-        this.layoutTool = new LayoutViewTool(param.layoutContainerId);
+        this.layoutTool = new LayoutViewTool(param.layoutContainerId, param.detectPortsCallback);
         this.addResizeCanvasEvents();
         // this.resizeCanvas();
     }
@@ -95,8 +96,12 @@ class PhotonForgeViewTool {
         this.schematicApp = new SchematicViewTool(schematicContainerId).app;
     }
 
-    createObjects(components: IComponent[], commandType: string, extraData?: any) {
-        this.layoutTool.createObjects(components, commandType, extraData);
+    async createObjects(components: IComponent[], commandType: string, extraData?: any) {
+        if (this.runningPromise) {
+            await this.runningPromise;
+            this.runningPromise = undefined;
+        }
+        this.runningPromise = this.layoutTool.createObjects(components, commandType, extraData);
     }
 
     private addResizeCanvasEvents(): void {
