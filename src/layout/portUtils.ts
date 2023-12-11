@@ -48,7 +48,7 @@ export function regeneratePort(
             const onePortContainer = drawOnePort(p);
             onePortContainer.visible = false;
             portArray.push({ name: pd.componentName, obj: onePortContainer });
-
+            onePortContainer.name = p.id;
             portContainer!.addChild(onePortContainer);
         });
     });
@@ -84,7 +84,7 @@ export function handlePortsCommand(
 
         if (newPorts) {
             ports.forEach((p) => {
-                if (!newPorts.map((d) => d.id).includes(p.name)) {
+                if (!newPorts.map((d) => d.id).includes(p.obj.name)) {
                     p.obj.parent.removeChild(p.obj);
                     p.obj.destroy();
                 }
