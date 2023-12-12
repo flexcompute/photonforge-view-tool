@@ -96,7 +96,8 @@ export default class LayoutViewTool {
                     target.visible = true;
                     this.stage?.fit(true, rect.width * 2, rect.height * 2);
                     this.stage?.moveCenter(rect.x + rect.width / 2, rect.y + rect.height / 2);
-                    showComponentPorts(this.portContainer, extraData.name, this.portCacheMap);
+                    const ports = extraData.rscp?.find((d) => d.text === "Ports")?.children as IPort[];
+                    showComponentPorts(this.portContainer, extraData.name, this.portCacheMap, ports);
                 } else {
                     this.activeComponentContainer.visible = false;
                     this.reverseContainer.visible = true;
@@ -178,6 +179,7 @@ export default class LayoutViewTool {
                 this.stage!,
                 this.detectPortsCallback,
             );
+        } else if (["model active", "model remove"].includes(commandType)) {
         } else {
             let selectComponentNode: any;
             // enter

@@ -19,7 +19,7 @@ export interface IComponent {
     selected: boolean;
     dblSelected: boolean;
     id: string;
-    rscp: { text: string; children: IPort[] }[];
+    rscp: { text: string; children: IPort[]; clickItem: IPort }[];
     detectPorts: IPort[];
 }
 
@@ -27,6 +27,8 @@ export interface IPort {
     center: IXY;
     input_direction: number;
     id: string;
+    hidden: boolean;
+    name: string;
     spec: {
         description: string;
         limits: number[];
