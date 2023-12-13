@@ -1,7 +1,6 @@
 import { Container, Graphics } from "pixi.js";
 import { IComponent, IPort } from "..";
-import { IPortInfoInMap } from "./LayoutViewTool";
-import { Viewport } from "pixi-viewport";
+import LayoutViewTool, { IPortInfoInMap } from "./LayoutViewTool";
 import { addDetectedPorts, removeDetectedPorts } from "./PortCommand";
 
 export function drawOnePort(p: IPort) {
@@ -18,6 +17,9 @@ export function drawOnePort(p: IPort) {
     const onePortContainer = new Container();
     onePortContainer.name = "one port";
 
+    onePortContainer.position.set(p.center.x, p.center.y);
+    onePortContainer.rotation = -(p.input_direction * Math.PI) / 180;
+
     const portLine = new Graphics();
     portLine.lineStyle(0.12, 0x820080);
     drawPortLine(portLine, p);
@@ -26,11 +28,6 @@ export function drawOnePort(p: IPort) {
     portLine2.lineStyle(1, 0x820080);
     portLine2.line.native = true;
     drawPortLine(portLine2, p);
-
-    portLine.position.set(p.center.x, p.center.y);
-    portLine.rotation = -(p.input_direction * Math.PI) / 180;
-    portLine2.position.set(p.center.x, p.center.y);
-    portLine2.rotation = -(p.input_direction * Math.PI) / 180;
 
     onePortContainer.addChild(portLine, portLine2);
     return onePortContainer;
@@ -68,9 +65,9 @@ export function showComponentPorts(
     container.children.forEach((c) => {
         c.visible = false;
     });
-    const portContainers = portCacheMap.get(componentName)!.map((d) => d.obj);
-    if (portContainers) {
-        portContainers.forEach((p) => {
+    const portArray = portCacheMap.get(componentName)!.map((d) => d.obj);
+    if (portArray) {
+        portArray.forEach((p) => {
             p.visible = ports ? !ports.find((p1) => p1.id === p.name)!.hidden : true;
         });
     }
@@ -85,11 +82,9 @@ export function handlePortsCommand(
         | "detect ports finished"
         | "port hidden",
     targetComponent: IComponent,
-    portCacheMap: Map<string, IPortInfoInMap[]>,
-    portContainer: Container,
-    stage: Viewport,
-    detectPortsCallback: (port: any) => {},
+    layoutViewTool: LayoutViewTool,
 ) {
+    const { portCacheMap, portContainer, stage, detectPortsCallback } = layoutViewTool;
     const newPorts = targetComponent.rscp?.find((d) => d.text === "Ports")?.children;
     if (commandType === "port remove") {
         const ports = portCacheMap.get(targetComponent.name)!;
@@ -97,12 +92,12 @@ export function handlePortsCommand(
             let deleteIndex;
             ports.forEach((p, index) => {
                 if (!newPorts.map((d) => d.id).includes(p.obj.name)) {
-                    p.obj.parent.removeChild(p.obj);
+                    portContainer.removeChild(p.obj);
                     p.obj.destroy();
                     deleteIndex = index;
                 }
             });
-            if (deleteIndex) {
+            if (deleteIndex !== undefined) {
                 ports.splice(deleteIndex, 1);
             }
         }
@@ -112,7 +107,7 @@ export function handlePortsCommand(
             newPorts.forEach((p) => {
                 if (!ports.map((d) => d.obj.name).includes(p.id)) {
                     const onePortContainer = drawOnePort(p);
-                    ports.push({ name: targetComponent.name, obj: onePortContainer });
+                    ports.push({ name: p.name, obj: onePortContainer });
                     onePortContainer.name = p.id;
                     portContainer!.addChild(onePortContainer);
                 }
@@ -122,19 +117,37 @@ export function handlePortsCommand(
     } else if (commandType === "port hidden") {
         showComponentPorts(portContainer, targetComponent.name, portCacheMap, newPorts);
     } else if (commandType === "detect ports") {
-        addDetectedPorts(stage, targetComponent.detectPorts, detectPortsCallback);
+        addDetectedPorts(stage!, targetComponent.detectPorts, detectPortsCallback);
     } else if (commandType === "undetect ports" || commandType === "detect ports finished") {
-        removeDetectedPorts(stage);
+        removeDetectedPorts(stage!);
     } else if (commandType === "port click") {
         const clickItem = targetComponent.rscp?.find((d) => d.text === "Ports")?.clickItem;
         if (clickItem) {
-        } else {
-            portCacheMap.get(targetComponent.name)!.forEach((p) => {
-                const target = p.obj.getChildByName("name-text");
-                if (target) {
-                    p.obj.removeChild(target);
+            layoutViewTool.resizeCallback.portTextCallback = () => {
+                const s = portContainer.getChildByName(clickItem.id)!;
+                const rect = s.getBounds();
+                if (!s.visible || rect.width === 0) {
+                    return;
                 }
-            });
+                const x = (rect.x + rect.width / 2) / layoutViewTool.app.screen.width;
+                const y = (rect.y + rect.height / 2) / layoutViewTool.app.screen.height;
+                const textNode = document.createTextNode(clickItem.name);
+                const textElement = document.createElement("span");
+                textElement.appendChild(textNode);
+                textElement.style.position = "absolute";
+                textElement.style.fontWeight = "bold";
+                textElement.style.fontSize = "18px";
+                textElement.style.pointerEvents = "none";
+                textElement.style.left = `calc(${x * 100}% + 3px)`;
+                textElement.style.top = `${y * 100}%`;
+                textElement.style.transform = "translate(0, -100%)";
+                textElement.style.userSelect = "none";
+                layoutViewTool.textWrapDom.appendChild(textElement);
+            };
+            Object.values(layoutViewTool.resizeCallback).forEach((f) => f());
+        } else {
+            delete layoutViewTool.resizeCallback.portTextCallback;
+            Object.values(layoutViewTool.resizeCallback).forEach((f) => f());
         }
     } else {
         if (newPorts) {

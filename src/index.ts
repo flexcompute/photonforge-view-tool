@@ -111,7 +111,7 @@ class PhotonForgeViewTool {
             const { clientWidth: w, clientHeight: h } = this.layoutTool.app.view.parentElement!;
             this.layoutTool.app.renderer.resize(w, h);
             this.layoutTool.stage?.resize(w, h, w, h);
-            this.layoutTool.resizeCallback?.();
+            Object.values(this.layoutTool.resizeCallback).forEach((f) => f());
             // this.schematicApp?.renderer.resize(window.innerWidth, window.innerHeight);
         };
         resize();

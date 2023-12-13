@@ -9,6 +9,7 @@ export function generateActiveComponent(
 ) {
     // collect active component
     if (!activeComponentContainer.children.find((c) => c.name === data.name)) {
+        // do not want the component's transform and repetition
         const ac = new Container();
         ac.name = data.name;
         activeComponentContainer.addChild(ac);
@@ -20,5 +21,6 @@ export function generateActiveComponent(
             const childrenContainer = generateComponent(data1);
             ac.addChild(childrenContainer);
         });
+        return ac;
     }
 }

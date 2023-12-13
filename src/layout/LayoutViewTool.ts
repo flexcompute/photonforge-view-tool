@@ -17,10 +17,11 @@ export default class LayoutViewTool {
     stage?: Viewport;
     w;
     h;
+    stageInitialData = { scale: 1, center: [0, 0] };
     componentArray: Container[] = [];
     containerDom: HTMLElement;
     textWrapDom: HTMLDivElement;
-    resizeCallback?: Function;
+    resizeCallback: { [key: string]: Function } = {};
     idCacheMap = new Map<string, Container[]>();
     layerCacheMap = new Map<string, Container[]>();
     portCacheMap = new Map<string, IPortInfoInMap[]>();
@@ -96,7 +97,7 @@ export default class LayoutViewTool {
                     target.visible = true;
                     this.stage?.fit(true, rect.width * 2, rect.height * 2);
                     this.stage?.moveCenter(rect.x + rect.width / 2, rect.y + rect.height / 2);
-                    const ports = extraData.rscp?.find((d) => d.text === "Ports")?.children as IPort[];
+                    const ports = extraData.rscp?.find((d: any) => d.text === "Ports")?.children as IPort[];
                     showComponentPorts(this.portContainer, extraData.name, this.portCacheMap, ports);
                 } else {
                     this.activeComponentContainer.visible = false;
@@ -155,9 +156,11 @@ export default class LayoutViewTool {
 
                         // handle port
                         showComponentPorts(this.portContainer, extraData.name, this.portCacheMap);
-                        this.resizeCallback?.();
+                        Object.values(this.resizeCallback).forEach((f) => f());
                     }
                 }
+                this.stageInitialData.scale = this.stage!.scale.x;
+                this.stageInitialData.center = [this.stage!.center.x, this.stage!.center.y];
             }
         } else if (commandType === "layer hidden") {
             components.forEach((c) => {
@@ -171,17 +174,15 @@ export default class LayoutViewTool {
                 });
             });
         } else if (commandType.includes("port")) {
-            handlePortsCommand(
-                commandType as any,
-                extraData,
-                this.portCacheMap,
-                this.portContainer,
-                this.stage!,
-                this.detectPortsCallback,
-            );
+            handlePortsCommand(commandType as any, extraData, this);
         } else if (["model active", "model remove"].includes(commandType)) {
+        } else if (commandType.includes("zoom")) {
+            const value = commandType === "zoom in" ? 1.1 : 1 / 1.1;
+            this.stage!.setZoom(this.stage!.scale.x * value, true);
+        } else if (commandType === "resetView") {
+            this.stage!.scale.set(this.stageInitialData.scale);
+            this.stage!.moveCenter(this.stageInitialData.center[0], this.stageInitialData.center[1]);
         } else {
-            let selectComponentNode: any;
             // enter
             const handleTreeData = (
                 components: IComponent[],
@@ -203,9 +204,6 @@ export default class LayoutViewTool {
                                 });
                             }
                         });
-                        if (component.dblSelected) {
-                            selectComponentNode = component;
-                        }
                         componentDataArray.push({
                             polyData,
                             selected: component.selected,
@@ -242,10 +240,12 @@ export default class LayoutViewTool {
             }
             const container = new Container();
             container.name = data.name;
-            if (this.idCacheMap.get(data.id)) {
-                this.idCacheMap.get(data.id)!.push(container);
+            let targetMapObjArray = this.idCacheMap.get(data.id);
+            if (targetMapObjArray) {
+                targetMapObjArray.push(container);
             } else {
-                this.idCacheMap.set(data.id, [container]);
+                targetMapObjArray = [container];
+                this.idCacheMap.set(data.id, targetMapObjArray);
             }
             if (data.transform.repetition?.spacing) {
                 const { rows, columns, spacing } = data.transform.repetition;
@@ -316,7 +316,10 @@ export default class LayoutViewTool {
                 }
             }
             if (!isTopLevel) {
-                generateActiveComponent(this.activeComponentContainer, data, generateComponent);
+                const ac = generateActiveComponent(this.activeComponentContainer, data, generateComponent);
+                if (ac) {
+                    targetMapObjArray.push(ac);
+                }
             }
             return container;
         };
@@ -388,8 +391,8 @@ export default class LayoutViewTool {
                 this.textWrapDom.appendChild(textElement);
             });
         };
-        this.resizeCallback = regenerateTexts;
-        this.stage.on("moved", regenerateTexts);
+        this.resizeCallback.regenerateTexts = regenerateTexts;
+        this.stage.on("moved", () => Object.values(this.resizeCallback).forEach((f) => f()));
 
         if (activeComponentName) {
             showComponentPorts(this.portContainer, activeComponentName, this.portCacheMap);
@@ -435,7 +438,7 @@ export default class LayoutViewTool {
             boundGraphicsArray.forEach((c) => {
                 this.selectContainer.addChild(c);
             });
-            this.resizeCallback?.(boundGraphicsArray, this.selectComponentName);
+            Object.values(this.resizeCallback).forEach((f) => f());
         }
     }
 
