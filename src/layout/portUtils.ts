@@ -3,17 +3,18 @@ import { IComponent, IPort } from "..";
 import LayoutViewTool, { IPortInfoInMap } from "./LayoutViewTool";
 import { addDetectedPorts, removeDetectedPorts } from "./PortCommand";
 
-export function drawOnePort(p: IPort) {
-    function drawPortLine(portLine: Graphics, p: IPort) {
-        portLine.moveTo(0, -p.spec.width / 2);
-        portLine.lineTo(0, p.spec.width / 2);
+export function drawPortLine(portLine: Graphics, p: IPort) {
+    portLine.moveTo(0, -p.spec.width / 2);
+    portLine.lineTo(0, p.spec.width / 2);
 
-        const halfA = 0.2;
-        portLine.moveTo(0, -halfA);
-        portLine.lineTo(0, halfA);
-        portLine.lineTo(1.5 * halfA, 0);
-        portLine.lineTo(0, -halfA);
-    }
+    const halfA = 0.2;
+    portLine.moveTo(0, -halfA);
+    portLine.lineTo(0, halfA);
+    portLine.lineTo(1.5 * halfA, 0);
+    portLine.lineTo(0, -halfA);
+}
+
+export function drawOnePort(p: IPort, color = 0x820080) {
     const onePortContainer = new Container();
     onePortContainer.name = "one port";
 
@@ -21,11 +22,11 @@ export function drawOnePort(p: IPort) {
     onePortContainer.rotation = -(p.input_direction * Math.PI) / 180;
 
     const portLine = new Graphics();
-    portLine.lineStyle(0.12, 0x820080);
+    portLine.lineStyle(0.12, color);
     drawPortLine(portLine, p);
 
     const portLine2 = new Graphics();
-    portLine2.lineStyle(1, 0x820080);
+    portLine2.lineStyle(1, color);
     portLine2.line.native = true;
     drawPortLine(portLine2, p);
 
