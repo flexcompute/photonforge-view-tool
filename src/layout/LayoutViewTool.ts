@@ -5,6 +5,7 @@ import Component from "./Component";
 import { IPolygon, ILayer, IOutComponent, IPort, IComponent, IOutPolygon } from "..";
 import { handlePortsCommand, regeneratePort, showComponentPorts } from "./portUtils";
 import { generateActiveComponent } from "./activeUtils";
+import { handleLayerVisibility } from "./layerUtils";
 
 const DOUBLE_CLICK = "component check";
 const SINGLE_CLICK = "component click";
@@ -83,18 +84,34 @@ export default class LayoutViewTool {
             if (SINGLE_CLICK === commandType) {
                 this.generateSelectBound();
             } else {
+                const setComponentChildrenVisible = (node: any) => {
+                    if (node.id) {
+                        (this.idCacheMap.get(node.id) as Container[]).forEach((pixiObj) => {
+                            pixiObj.visible = true;
+                            pixiObj.children.forEach((cc: any) => {
+                                if (!cc.name) {
+                                    cc.visible = true;
+                                }
+                            });
+                            node.children?.forEach((c: any) => {
+                                setComponentChildrenVisible(c);
+                            });
+                        });
+                    }
+                };
+                // DOUBLE_CLICK
                 const target = this.activeComponentContainer.children.find((c) => c.name === extraData.name);
                 if (target) {
                     this.activeComponentContainer.visible = true;
                     this.reverseContainer.visible = false;
                     const activeContainerIndex = this.stage!.children.indexOf(this.activeComponentContainer);
                     this.stage!.removeChild(this.activeComponentContainer);
+                    setComponentChildrenVisible(extraData);
                     const rect = target.getBounds();
                     this.stage!.addChildAt(this.activeComponentContainer, activeContainerIndex);
                     this.activeComponentContainer.children.forEach((s) => {
-                        s.visible = false;
+                        s.visible = s === target;
                     });
-                    target.visible = true;
                     this.stage?.fit(true, rect.width * 2, rect.height * 2);
                     this.stage?.moveCenter(rect.x + rect.width / 2, rect.y + rect.height / 2);
                     const ports = extraData.rscp?.find((d: any) => d.text === "Ports")?.children as IPort[];
@@ -115,21 +132,6 @@ export default class LayoutViewTool {
                                 });
                             });
                         });
-                        const setComponentChildrenVisible = (node: any) => {
-                            if (node.id) {
-                                (this.idCacheMap.get(node.id) as Container[]).forEach((element) => {
-                                    element.visible = true;
-                                    element.children.forEach((cc: any) => {
-                                        if (!cc.name) {
-                                            cc.visible = true;
-                                        }
-                                    });
-                                    node.children?.forEach((c: any) => {
-                                        setComponentChildrenVisible(c);
-                                    });
-                                });
-                            }
-                        };
                         const setComponentParentVisible = (node: any) => {
                             if (node.id) {
                                 (this.idCacheMap.get(node.id) as Container[]).forEach((element) => {
@@ -155,31 +157,25 @@ export default class LayoutViewTool {
                         this.stage?.moveCenter(rect.x + rect.width / 2, rect.y + rect.height / 2);
 
                         // handle port
-                        showComponentPorts(this.portContainer, extraData.name, this.portCacheMap);
+                        const ports = extraData.rscp?.find((d: any) => d.text === "Ports")?.children as IPort[];
+                        showComponentPorts(this.portContainer, extraData.name, this.portCacheMap, ports);
                         Object.values(this.resizeCallback).forEach((f) => f());
                     }
                 }
+                // handle layer
+                handleLayerVisibility(components, this.layerCacheMap);
                 this.stageInitialData.scale = this.stage!.scale.x;
                 this.stageInitialData.center = [this.stage!.center.x, this.stage!.center.y];
             }
         } else if (commandType === "layer hidden") {
-            components.forEach((c) => {
-                c.layers?.forEach((l) => {
-                    const target = this.layerCacheMap.get(l.layer);
-                    if (target) {
-                        target.forEach((c1) => {
-                            c1.visible = !l.hidden;
-                        });
-                    }
-                });
-            });
+            handleLayerVisibility(components, this.layerCacheMap);
         } else if (commandType.includes("port")) {
             handlePortsCommand(commandType as any, extraData, this);
         } else if (["model active", "model remove"].includes(commandType)) {
         } else if (commandType.includes("zoom")) {
             const value = commandType === "zoom in" ? 1.1 : 1 / 1.1;
             this.stage!.setZoom(this.stage!.scale.x * value, true);
-        } else if (commandType === "resetView") {
+        } else if (commandType === "resetview") {
             this.stage!.scale.set(this.stageInitialData.scale);
             this.stage!.moveCenter(this.stageInitialData.center[0], this.stageInitialData.center[1]);
         } else {
@@ -316,7 +312,12 @@ export default class LayoutViewTool {
                 }
             }
             if (!isTopLevel) {
-                const ac = generateActiveComponent(this.activeComponentContainer, data, generateComponent);
+                const ac = generateActiveComponent(
+                    this.activeComponentContainer,
+                    data,
+                    generateComponent,
+                    this.layerCacheMap,
+                );
                 if (ac) {
                     targetMapObjArray.push(ac);
                 }
