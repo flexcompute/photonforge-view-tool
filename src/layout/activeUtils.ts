@@ -1,15 +1,18 @@
 import { Container } from "pixi.js";
 import { IOutComponent } from "../index";
 import Component from "./Component";
+import LayoutViewTool from "./LayoutViewTool";
 
+// raw component (be used as reference in other component)
 export function generateActiveComponent(
-    activeComponentContainer: Container,
+    layoutViewTool: LayoutViewTool,
     data: IOutComponent,
     generateComponent: Function,
-    layerCacheMap: Map<string, Container[]>,
 ) {
+    const { activeComponentContainer, layerCacheMap, idCacheMap } = layoutViewTool;
     // collect active component
-    if (!activeComponentContainer.children.find((c) => c.name === data.name)) {
+    const existComponent = activeComponentContainer.children.find((c) => c.name === data.name);
+    if (!existComponent) {
         // active component do not want the transform and repetition just as reference
         const ac = new Container();
         ac.name = data.name;
@@ -31,5 +34,15 @@ export function generateActiveComponent(
             ac.addChild(childrenContainer);
         });
         return ac;
+    } else {
+        function buildConnectivity(existComponent: Container, data: IOutComponent) {
+            const targetMapObjArray = idCacheMap.get(data.id) || [];
+            targetMapObjArray.push(existComponent);
+            idCacheMap.set(data.id, targetMapObjArray);
+            data.children.forEach((c, i) => {
+                buildConnectivity(existComponent.children.filter((cc) => cc.name === c.name)[i] as Container, c);
+            });
+        }
+        buildConnectivity(existComponent as Container, data);
     }
 }
