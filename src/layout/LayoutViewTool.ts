@@ -227,12 +227,12 @@ export default class LayoutViewTool {
         this.selectedObjectArray.length = 0;
         this.activeComponentContainer.removeChildren();
         const promises: Promise<void>[] = [];
-        const ports: { ports: IPort[]; componentName: string }[] = [];
+        const ports: { ports: IPort[]; componentId: string }[] = [];
 
         let activeComponentName: string | undefined = undefined;
         const generateComponent = (data: IOutComponent, isTopLevel = false) => {
             if (data.ports) {
-                ports.push({ ports: data.ports, componentName: data.name });
+                ports.push({ ports: data.ports, componentId: data.id });
             }
             const container = new Container();
             container.name = data.name;
