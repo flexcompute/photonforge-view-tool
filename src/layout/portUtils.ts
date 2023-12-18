@@ -35,18 +35,18 @@ export function drawOnePort(p: IPort, color = 0x820080) {
 }
 
 export function regeneratePort(
-    portsData: { ports: IPort[]; componentId: string }[],
+    portsData: { ports: IPort[]; componentName: string }[],
     portContainer: Container,
     portCacheMap: Map<string, IPortInfoInMap[]>,
 ) {
     portsData.forEach((pd) => {
-        const oldPorts = portCacheMap.get(pd.componentId);
+        const oldPorts = portCacheMap.get(pd.componentName);
         if (oldPorts) {
             oldPorts.map((pd2) => pd2.obj).forEach((p) => portContainer.removeChild(p));
         }
         const { ports } = pd;
         const portArray: { name: string; obj: Container }[] = [];
-        portCacheMap.set(pd.componentId, portArray);
+        portCacheMap.set(pd.componentName, portArray);
         ports.forEach((p) => {
             const onePortContainer = drawOnePort(p);
             onePortContainer.visible = !p.hidden;
@@ -59,14 +59,14 @@ export function regeneratePort(
 
 export function showComponentPorts(
     container: Container,
-    componentId: string,
+    componentName: string,
     portCacheMap: Map<string, IPortInfoInMap[]>,
     ports?: IPort[],
 ) {
     container.children.forEach((c) => {
         c.visible = false;
     });
-    const portArray = portCacheMap.get(componentId)!.map((d) => d.obj);
+    const portArray = portCacheMap.get(componentName)!.map((d) => d.obj);
     if (portArray) {
         portArray.forEach((p) => {
             p.visible = ports ? !ports.find((p1) => p1.id === p.name)!.hidden : true;
@@ -159,7 +159,7 @@ export function handlePortsCommand(
         }
     } else {
         if (newPorts) {
-            regeneratePort([{ componentId: targetComponent.id, ports: newPorts }], portContainer, portCacheMap);
+            regeneratePort([{ componentName: targetComponent.name, ports: newPorts }], portContainer, portCacheMap);
             Object.values(layoutViewTool.resizeCallback).forEach((f) => f());
         }
     }

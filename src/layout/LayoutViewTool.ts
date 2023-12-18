@@ -115,7 +115,7 @@ export default class LayoutViewTool {
                     this.stage?.fit(true, rect.width * 2, rect.height * 2);
                     this.stage?.moveCenter(rect.x + rect.width / 2, rect.y + rect.height / 2);
                     const ports = extraData.rscp?.find((d: any) => d.text === "Ports")?.children as IPort[];
-                    showComponentPorts(this.portContainer, extraData.id, this.portCacheMap, ports);
+                    showComponentPorts(this.portContainer, extraData.name, this.portCacheMap, ports);
                 } else {
                     this.activeComponentContainer.visible = false;
                     this.reverseContainer.visible = true;
@@ -158,7 +158,7 @@ export default class LayoutViewTool {
 
                         // handle port
                         const ports = extraData.rscp?.find((d: any) => d.text === "Ports")?.children as IPort[];
-                        showComponentPorts(this.portContainer, extraData.id, this.portCacheMap, ports);
+                        showComponentPorts(this.portContainer, extraData.name, this.portCacheMap, ports);
                         Object.values(this.resizeCallback).forEach((f) => f());
                     }
                 }
@@ -179,6 +179,7 @@ export default class LayoutViewTool {
             this.stage!.scale.set(this.stageInitialData.scale);
             this.stage!.moveCenter(this.stageInitialData.center[0], this.stageInitialData.center[1]);
         } else {
+            let selectComponentNode: any;
             // enter
             const handleTreeData = (
                 components: IComponent[],
@@ -200,6 +201,9 @@ export default class LayoutViewTool {
                                 });
                             }
                         });
+                        if (component.dblSelected) {
+                            selectComponentNode = component;
+                        }
                         componentDataArray.push({
                             polyData,
                             selected: component.selected,
@@ -214,7 +218,12 @@ export default class LayoutViewTool {
                 });
                 return componentDataArray;
             };
-            return this.initComponents(handleTreeData(components, undefined, true));
+            return this.initComponents(handleTreeData(components, undefined, true)).then(() => {
+                // mock check
+                if (selectComponentNode) {
+                    this.createObjects(components, "component check", selectComponentNode);
+                }
+            });
         }
     }
 
@@ -227,12 +236,12 @@ export default class LayoutViewTool {
         this.selectedObjectArray.length = 0;
         this.activeComponentContainer.removeChildren();
         const promises: Promise<void>[] = [];
-        const ports: { ports: IPort[]; componentId: string }[] = [];
+        const ports: { ports: IPort[]; componentName: string }[] = [];
 
-        let activeComponentId: string | undefined = undefined;
+        let activeComponentName: string | undefined = undefined;
         const generateComponent = (data: IOutComponent, isTopLevel = false) => {
             if (data.ports) {
-                ports.push({ ports: data.ports, componentId: data.id });
+                ports.push({ ports: data.ports, componentName: data.name });
             }
             const container = new Container();
             container.name = data.name;
@@ -299,7 +308,7 @@ export default class LayoutViewTool {
                 });
             }
             if (data.dblSelected) {
-                activeComponentId = data.id;
+                activeComponentName = data.name;
             }
             if (data.selected) {
                 function ifParentActive(data: any): boolean {
@@ -394,8 +403,8 @@ export default class LayoutViewTool {
         this.resizeCallback.regenerateTexts = regenerateTexts;
         this.stage.on("moved", () => Object.values(this.resizeCallback).forEach((f) => f()));
 
-        if (activeComponentId) {
-            showComponentPorts(this.portContainer, activeComponentId, this.portCacheMap);
+        if (activeComponentName) {
+            showComponentPorts(this.portContainer, activeComponentName, this.portCacheMap);
         }
         this.generateSelectBound();
         regenerateTexts();
