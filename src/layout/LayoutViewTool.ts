@@ -115,7 +115,7 @@ export default class LayoutViewTool {
                     this.stage?.fit(true, rect.width * 2, rect.height * 2);
                     this.stage?.moveCenter(rect.x + rect.width / 2, rect.y + rect.height / 2);
                     const ports = extraData.rscp?.find((d: any) => d.text === "Ports")?.children as IPort[];
-                    showComponentPorts(this.portContainer, extraData.name, this.portCacheMap, ports);
+                    showComponentPorts(this.portContainer, extraData.id, this.portCacheMap, ports);
                 } else {
                     this.activeComponentContainer.visible = false;
                     this.reverseContainer.visible = true;
@@ -158,7 +158,7 @@ export default class LayoutViewTool {
 
                         // handle port
                         const ports = extraData.rscp?.find((d: any) => d.text === "Ports")?.children as IPort[];
-                        showComponentPorts(this.portContainer, extraData.name, this.portCacheMap, ports);
+                        showComponentPorts(this.portContainer, extraData.id, this.portCacheMap, ports);
                         Object.values(this.resizeCallback).forEach((f) => f());
                     }
                 }
@@ -171,7 +171,7 @@ export default class LayoutViewTool {
             handleLayerVisibility(components, this.layerCacheMap);
         } else if (commandType.includes("port")) {
             handlePortsCommand(commandType as any, extraData, this);
-        } else if (["model active", "model remove"].includes(commandType)) {
+        } else if (commandType.includes("model")) {
         } else if (commandType.includes("zoom")) {
             const value = commandType === "zoom in" ? 1.1 : 1 / 1.1;
             this.stage!.setZoom(this.stage!.scale.x * value, true);
@@ -229,7 +229,7 @@ export default class LayoutViewTool {
         const promises: Promise<void>[] = [];
         const ports: { ports: IPort[]; componentId: string }[] = [];
 
-        let activeComponentName: string | undefined = undefined;
+        let activeComponentId: string | undefined = undefined;
         const generateComponent = (data: IOutComponent, isTopLevel = false) => {
             if (data.ports) {
                 ports.push({ ports: data.ports, componentId: data.id });
@@ -299,7 +299,7 @@ export default class LayoutViewTool {
                 });
             }
             if (data.dblSelected) {
-                activeComponentName = data.name;
+                activeComponentId = data.id;
             }
             if (data.selected) {
                 function ifParentActive(data: any): boolean {
@@ -319,13 +319,17 @@ export default class LayoutViewTool {
             }
             return container;
         };
-        dataArray.forEach((data) => {
-            this.componentArray.push(generateComponent(data, true));
+        dataArray.forEach((data, dataIndex) => {
+            const component = generateComponent(data, dataIndex === 0);
+            if (dataIndex === 0) {
+                this.componentArray.push(component);
+            }
         });
         regeneratePort(ports, this.portContainer, this.portCacheMap);
         await Promise.all(promises);
         this.reverseContainer.name = "reverse-container";
         this.reverseContainer.scale.y = -1;
+        this.reverseContainer.visible = true;
 
         this.activeComponentContainer.scale.y = -1;
         this.activeComponentContainer.visible = false;
@@ -390,8 +394,8 @@ export default class LayoutViewTool {
         this.resizeCallback.regenerateTexts = regenerateTexts;
         this.stage.on("moved", () => Object.values(this.resizeCallback).forEach((f) => f()));
 
-        if (activeComponentName) {
-            showComponentPorts(this.portContainer, activeComponentName, this.portCacheMap);
+        if (activeComponentId) {
+            showComponentPorts(this.portContainer, activeComponentId, this.portCacheMap);
         }
         this.generateSelectBound();
         regenerateTexts();
