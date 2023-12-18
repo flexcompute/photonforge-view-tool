@@ -312,12 +312,7 @@ export default class LayoutViewTool {
                 }
             }
             if (!isTopLevel) {
-                const ac = generateActiveComponent(
-                    this.activeComponentContainer,
-                    data,
-                    generateComponent,
-                    this.layerCacheMap,
-                );
+                const ac = generateActiveComponent(this, data, generateComponent);
                 if (ac) {
                     targetMapObjArray.push(ac);
                 }
