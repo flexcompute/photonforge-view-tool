@@ -72,14 +72,8 @@ export default class LayoutViewTool {
             this.selectedObjectArray.length = 0;
             if (extraData) {
                 const containers = this.idCacheMap.get(extraData.id)!;
-                if (
-                    DOUBLE_CLICK === commandType ||
-                    containers[0].children.every((c) => c.visible) ||
-                    extraData.dblSelected
-                ) {
-                    this.selectedObjectArray.push(...containers);
-                    this.selectComponentName = extraData.name;
-                }
+                this.selectedObjectArray.push(...containers);
+                this.selectComponentName = extraData.name;
             }
             if (SINGLE_CLICK === commandType) {
                 this.generateSelectBound();
@@ -417,30 +411,39 @@ export default class LayoutViewTool {
             this.stage.removeChild(this.reverseContainer);
             this.stage.removeChild(this.activeComponentContainer);
             const boundGraphicsArray: Graphics[] = [];
-            this.selectedObjectArray.forEach((c: Container) => {
-                if (c.visible) {
-                    const targetOs = c.children.every((cc) => cc.name === "repetition-container") ? c.children : [c];
-                    function getParentVisible(obj: DisplayObject): boolean {
-                        if (obj.parent) {
-                            return obj.visible && getParentVisible(obj.parent);
-                        } else {
-                            return obj.visible;
-                        }
-                    }
-                    targetOs.forEach((cc) => {
-                        if (getParentVisible(cc)) {
-                            const boundGraphics = new Graphics();
-                            const rect = cc.getBounds();
-                            boundGraphics.lineStyle(1, 0x000000);
-                            boundGraphics.beginFill(0xffffff, 0.7);
-                            boundGraphics.line.native = true;
-                            boundGraphics.drawRect(rect.x, rect.y, rect.width, rect.height);
-                            boundGraphics.endFill();
-
-                            boundGraphicsArray.push(boundGraphics);
-                        }
-                    });
+            function getParentVisible(obj: DisplayObject): boolean {
+                if (obj.parent) {
+                    return obj.visible && getParentVisible(obj.parent);
+                } else {
+                    return obj.visible;
                 }
+            }
+            const objVisibleMap = new Map<DisplayObject, boolean>();
+            function setPixiObjChildrenVisible(pixiObj: any) {
+                objVisibleMap.set(pixiObj, pixiObj.visible);
+                pixiObj.visible = true;
+                pixiObj.children.forEach((cc: any) => {
+                    setPixiObjChildrenVisible(cc);
+                });
+            }
+            this.selectedObjectArray.forEach((c: Container) => {
+                const targetOs = c.children.every((cc) => cc.name === "repetition-container") ? c.children : [c];
+                targetOs.forEach((cc) => {
+                    setPixiObjChildrenVisible(cc);
+                    if (getParentVisible(cc)) {
+                        const boundGraphics = new Graphics();
+                        const rect = cc.getBounds();
+                        boundGraphics.lineStyle(1, 0x000000);
+                        boundGraphics.beginFill(0xffffff, 0.7);
+                        boundGraphics.line.native = true;
+                        boundGraphics.drawRect(rect.x, rect.y, rect.width, rect.height);
+                        boundGraphics.endFill();
+                        boundGraphicsArray.push(boundGraphics);
+                    }
+                });
+            });
+            objVisibleMap.forEach((value, obj) => {
+                obj.visible = value;
             });
             this.stage.addChildAt(this.reverseContainer, 0);
             this.stage.addChildAt(this.activeComponentContainer, activeContainerIndex);
