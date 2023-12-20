@@ -51,17 +51,25 @@ def check_screenshot():
             By.XPATH,
             "/html/body/app-root/app-workbench/app-workbench-toolbar/div/app-input/input",
         ).get_attribute("value")
-        driver.save_screenshot(f"./screen-result/{case_name}-new.png")
-        print("*****case_name:", case_name)
-        if compare_screenshots(
-            f"./screen-result/{case_name}-new.png",
-            f"{os.getcwd()}/.github/workflows/standard/{case_name}.png",
-        ):
-            os.remove(f"./screen-result/{case_name}-new.png")
-        else:
-            error_count += 1
 
-    simulationViewWork = True
+        helperElement = driver.find_element(By.XPATH, "/html/body/div")
+        driver.execute_script(
+            "arguments[0].style.visibility = 'hidden';", helperElement
+        )
+
+        suffix = "-new" if os.getenv("Action_Mode") == "compare" else ""
+        driver.save_screenshot(f"./screen-result/{case_name}{suffix}.png")
+        print("*****case_name:", case_name)
+        if os.getenv("Action_Mode") == "compare":
+            if compare_screenshots(
+                f"./screen-result/{case_name}-new.png",
+                f"{os.getcwd()}/.github/workflows/standard/{case_name}.png",
+            ):
+                os.remove(f"./screen-result/{case_name}-new.png")
+            else:
+                error_count += 1
+
+    simulationViewWork = "Normal"
     # simulation view auto test
     try:
         driver.get(
@@ -73,9 +81,10 @@ def check_screenshot():
         )
     except:
         print("simulation view fail")
-        simulationViewWork = False
+        simulationViewWork = "Error"
         traceback.print_exc()
 
+    print("*****simulation-view:", {simulationViewWork})
     data = {
         "msg": f"Scheduled Test Job: {error_count} / {len(urls)} cases error,  simulation-view {simulationViewWork}",
         "link": f"https://github.com/flexcompute/photonforge-view-tool/actions/runs/{os.getenv('GITHUB_RUN_ID')}",

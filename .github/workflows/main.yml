@@ -3,6 +3,11 @@ on:
     schedule:
         - cron: "0 */12 * * *"
     workflow_dispatch:
+        inputs:
+            actionMode:
+                description: actionMode [compare, generate]
+                default: compare
+                required: true
 jobs:
     run_python_script:
         runs-on: ubuntu-latest
@@ -27,6 +32,10 @@ jobs:
 
             - name: Install dependencies
               run: pip install -r .github/workflows/requirements.txt
+
+            - name: Set up environment
+              run: |
+                  echo "Action_Mode=${{ github.event.inputs.actionMode}}" >> $GITHUB_ENV
 
             - name: Run Python script
               run: python .github/workflows/test.py
