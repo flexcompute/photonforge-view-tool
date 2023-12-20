@@ -429,8 +429,8 @@ export default class LayoutViewTool {
             this.selectedObjectArray.forEach((c: Container) => {
                 const targetOs = c.children.every((cc) => cc.name === "repetition-container") ? c.children : [c];
                 targetOs.forEach((cc) => {
-                    setPixiObjChildrenVisible(cc);
                     if (getParentVisible(cc)) {
+                        setPixiObjChildrenVisible(cc);
                         const boundGraphics = new Graphics();
                         const rect = cc.getBounds();
                         boundGraphics.lineStyle(1, 0x000000);
