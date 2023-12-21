@@ -139,6 +139,7 @@ export default class LayoutViewTool {
 
                         this.stage?.removeChild(this.reverseContainer);
                         const rect = (
+                            this.selectedObjectArray[0].children.length &&
                             this.selectedObjectArray[0].children.every((cc) => cc.name === "repetition-container")
                                 ? this.selectedObjectArray[0].children[0]
                                 : this.selectedObjectArray[0]
