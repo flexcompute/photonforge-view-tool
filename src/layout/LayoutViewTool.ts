@@ -30,6 +30,7 @@ export default class LayoutViewTool {
     activeComponentContainer = new Container();
     portContainer = new Container();
     selectContainer = new Container();
+    currentActiveContainer?: Container;
 
     selectedObjectArray: Container[] = [];
     selectComponentName = "";
@@ -62,10 +63,18 @@ export default class LayoutViewTool {
         this.containerDom.appendChild(this.app.view);
     }
 
+    ifPixiDescendantNode(target: DisplayObject, currentNode: Container): boolean {
+        return target === currentNode || !!currentNode.children.find((c: any) => this.ifPixiDescendantNode(target, c));
+    }
+
     createObjects(components: IComponent[], commandType: string, extraData?: any) {
         console.warn(commandType, "extraData:", extraData);
         if (commandType === "component hidden") {
-            this.idCacheMap.get(extraData.id)!.forEach((c) => (c.visible = !extraData.hidden));
+            this.idCacheMap.get(extraData.id)!.forEach((c) => {
+                if (!this.currentActiveContainer || this.ifPixiDescendantNode(c, this.currentActiveContainer)) {
+                    c.visible = !extraData.hidden;
+                }
+            });
         } else if ([DOUBLE_CLICK, SINGLE_CLICK].includes(commandType)) {
             // check is dbclick, click is single click(left red)
             this.unSelectComponent();
@@ -95,6 +104,7 @@ export default class LayoutViewTool {
                 };
                 // DOUBLE_CLICK
                 const target = this.activeComponentContainer.children.find((c) => c.name === extraData.name);
+                this.currentActiveContainer = target as Container | undefined;
                 if (target) {
                     this.activeComponentContainer.visible = true;
                     this.reverseContainer.visible = false;
