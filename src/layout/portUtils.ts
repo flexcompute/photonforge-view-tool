@@ -19,7 +19,7 @@ export function drawOnePort(p: IPort, color = 0x820080) {
     onePortContainer.name = "one port";
 
     onePortContainer.position.set(p.center.x, p.center.y);
-    onePortContainer.rotation = -(p.input_direction * Math.PI) / 180;
+    onePortContainer.rotation = (p.input_direction * Math.PI) / 180; // SCEM-4834
 
     const portLine = new Graphics();
     portLine.lineStyle(0.12, color);
