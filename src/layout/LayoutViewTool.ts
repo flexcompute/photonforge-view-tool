@@ -286,6 +286,18 @@ export default class LayoutViewTool {
                     }
                 }
             } else {
+                const array: any = {};
+                data.polyData.forEach((p) => {
+                    const exist = array[p.layerInfo!.layer];
+                    if (exist) {
+                        exist.push(p);
+                    } else {
+                        array[p.layerInfo!.layer] = [p];
+                    }
+                });
+                data.polyData = Object.keys(array)
+                    .map((key) => array[key])
+                    .flat();
                 data.polyData.forEach((p) => {
                     const comp = new Component(p);
                     promises.push(comp.textureLoadPromise);
