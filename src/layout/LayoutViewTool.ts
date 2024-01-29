@@ -201,7 +201,7 @@ export default class LayoutViewTool {
                             const layer = (layers || component.layers)!.find(
                                 (oneLayer) => `(${s.layer},${s.datatype})` === oneLayer.layer,
                             );
-                            if (!layer?.hidden) {
+                            if (!layer?.hidden && layer) {
                                 polyData.push({
                                     polygonInfo: s.poly,
                                     layerInfo: layer,
