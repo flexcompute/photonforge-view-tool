@@ -20,7 +20,6 @@ export function generateActiveComponent(
         data.polyData.forEach((p) => {
             const comp = new Component(p);
             ac.addChild(comp.viewObject);
-
             if (p.layerInfo?.layer) {
                 if (layerCacheMap.get(p.layerInfo.layer)) {
                     layerCacheMap.get(p.layerInfo.layer)!.push(comp.viewObject);
@@ -29,6 +28,8 @@ export function generateActiveComponent(
                 }
             }
         });
+
+        // here need not handle repetition on top data.
         data.children.forEach((data1) => {
             const childrenContainer = generateComponent(data1);
             ac.addChild(childrenContainer);
@@ -40,7 +41,11 @@ export function generateActiveComponent(
             targetMapObjArray.push(existComponent);
             idCacheMap.set(data.id, targetMapObjArray);
             data.children.forEach((c, i) => {
-                buildConnectivity(existComponent.children.filter((cc) => cc.name === c.name)[i] as Container, c);
+                let childrenTarget = existComponent.children;
+                if (childrenTarget.length === 1 && childrenTarget[0].name === "repetition-container") {
+                    childrenTarget = (childrenTarget[0] as Container).children;
+                }
+                buildConnectivity(childrenTarget.filter((cc) => cc.name === c.name)[i] as Container, c);
             });
         }
         buildConnectivity(existComponent as Container, data);

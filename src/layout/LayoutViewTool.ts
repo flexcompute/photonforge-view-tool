@@ -183,6 +183,8 @@ export default class LayoutViewTool {
         } else if (commandType === "resetview") {
             this.stage!.scale.set(this.stageInitialData.scale);
             this.stage!.moveCenter(this.stageInitialData.center[0], this.stageInitialData.center[1]);
+            this.resizeCallback.regenerateTexts();
+        } else if (commandType.includes("post")) {
         } else {
             let selectComponentNode: any;
             // enter
