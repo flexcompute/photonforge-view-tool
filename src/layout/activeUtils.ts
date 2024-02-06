@@ -37,6 +37,8 @@ export function generateActiveComponent(
         return ac;
     } else {
         function buildConnectivity(existComponent: Container, data: IOutComponent) {
+            if (!existComponent) return;
+
             const targetMapObjArray = idCacheMap.get(data.id) || [];
             targetMapObjArray.push(existComponent);
             idCacheMap.set(data.id, targetMapObjArray);
@@ -45,7 +47,8 @@ export function generateActiveComponent(
                 if (childrenTarget.length === 1 && childrenTarget[0].name === "repetition-container") {
                     childrenTarget = (childrenTarget[0] as Container).children;
                 }
-                buildConnectivity(childrenTarget.filter((cc) => cc.name === c.name)[i] as Container, c);
+                const targetIndex = data.children.filter((cc) => cc.name === c.name).indexOf(c);
+                buildConnectivity(childrenTarget.filter((cc) => cc.name === c.name)[targetIndex] as Container, c);
             });
         }
         buildConnectivity(existComponent as Container, data);
