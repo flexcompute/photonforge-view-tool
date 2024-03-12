@@ -14,7 +14,17 @@ import traceback
 
 # import imutils
 
-
+def decode_base64(data):
+    # 计算需要填充的 '=' 字符数
+    padding = 4 - (len(data) % 4)
+    # 如果长度已经是 4 的倍数，则不需要填充
+    if padding == 4:
+        padding = 0
+    # 添加必要的 '=' 填充字符
+    data += "=" * padding
+    # 尝试解码
+    return base64.urlsafe_b64decode(data)
+    
 def check_screenshot():
     # 创建一个新的文件夹
     os.makedirs("screen-result", exist_ok=True)
@@ -60,7 +70,7 @@ def check_screenshot():
         result = driver.execute_script('return window.get3dScreenshot()')
         print(result)
         # 解码 Base64 数据
-        image_data = base64.urlsafe_b64decode(result)
+        image_data = decode_base64(result)
         suffix = "-new" if os.getenv("Action_Mode") == "compare" else ""
         with open(f"./screen-result/{case_name}{suffix}.png", "wb") as f:
             f.write(image_data)
