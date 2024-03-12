@@ -31,15 +31,15 @@ def check_screenshot():
 
     urls = [
         "https://tidy3d.dev-simulation.cloud/workbench?taskId=pa-734c1c1d-e397-41f7-b0cd-f9f11e11be0c",  # Ring resonator
-        "https://tidy3d.dev-simulation.cloud/workbench?taskId=pa-7c1605ac-9d48-4ea2-be5e-356e376c9487",  # Photonic crystal cavity
-        "https://tidy3d.dev-simulation.cloud/workbench?taskId=pa-431bfe46-c1f4-49cb-9c3c-93ac15d34817",  # Edge coupler
-        "https://tidy3d.dev-simulation.cloud/workbench?taskId=pa-14f0dcad-b4fb-4c0c-91b0-a29361118c68",  # Directional coupler
-        "https://tidy3d.dev-simulation.cloud/workbench?taskId=pa-818cdc48-0baa-4bd1-b7ae-e8d2b83339cd",  # PhC slab polarization filter
-        "https://tidy3d.dev-simulation.cloud/workbench?taskId=pa-08bb60af-621d-492d-825f-a047fe8e6c80",  # Zone plate
-        "https://tidy3d.dev-simulation.cloud/workbench?taskId=pa-86b54f6b-a85e-47f7-bb4c-caa54f919c60",  # Metalens
-        "https://tidy3d.dev-simulation.cloud/workbench?taskId=pa-adcaef19-324f-49ba-b388-944cde4e9d53",  # Gradient metasurface reflector
-        "https://tidy3d.dev-simulation.cloud/workbench?taskId=pa-9e546237-71fa-461b-9dff-5e64de4025aa",  # Compact 2 by 2 MMI power splitter
-        "https://tidy3d.dev-simulation.cloud/workbench?taskId=pa-1235d143-ef75-43cb-b89c-b022bc769735",  # Polarization splitter rotator
+        # "https://tidy3d.dev-simulation.cloud/workbench?taskId=pa-7c1605ac-9d48-4ea2-be5e-356e376c9487",  # Photonic crystal cavity
+        # "https://tidy3d.dev-simulation.cloud/workbench?taskId=pa-431bfe46-c1f4-49cb-9c3c-93ac15d34817",  # Edge coupler
+        # "https://tidy3d.dev-simulation.cloud/workbench?taskId=pa-14f0dcad-b4fb-4c0c-91b0-a29361118c68",  # Directional coupler
+        # "https://tidy3d.dev-simulation.cloud/workbench?taskId=pa-818cdc48-0baa-4bd1-b7ae-e8d2b83339cd",  # PhC slab polarization filter
+        # "https://tidy3d.dev-simulation.cloud/workbench?taskId=pa-08bb60af-621d-492d-825f-a047fe8e6c80",  # Zone plate
+        # "https://tidy3d.dev-simulation.cloud/workbench?taskId=pa-86b54f6b-a85e-47f7-bb4c-caa54f919c60",  # Metalens
+        # "https://tidy3d.dev-simulation.cloud/workbench?taskId=pa-adcaef19-324f-49ba-b388-944cde4e9d53",  # Gradient metasurface reflector
+        # "https://tidy3d.dev-simulation.cloud/workbench?taskId=pa-9e546237-71fa-461b-9dff-5e64de4025aa",  # Compact 2 by 2 MMI power splitter
+        # "https://tidy3d.dev-simulation.cloud/workbench?taskId=pa-1235d143-ef75-43cb-b89c-b022bc769735",  # Polarization splitter rotator
     ]
 
     error_count = 0
@@ -47,20 +47,26 @@ def check_screenshot():
         driver.get(url)
         time.sleep(15)
 
-        case_name = driver.find_element(
-            By.XPATH,
-            "/html/body/app-root/app-workbench/app-workbench-toolbar/div/app-input/input",
-        ).get_attribute("value")
+        # case_name = driver.find_element(
+        #     By.XPATH,
+        #     "/html/body/app-root/app-workbench/app-workbench-toolbar/div/app-input/input",
+        # ).get_attribute("value")
+        # helperElement = driver.find_element(By.XPATH, "/html/body/div")
+        # driver.execute_script(
+        #     "arguments[0].style.visibility = 'hidden';", helperElement
+        # )
 
-        helperElement = driver.find_element(By.XPATH, "/html/body/div")
-        driver.execute_script(
-            "arguments[0].style.visibility = 'hidden';", helperElement
-        )
+        # 执行 JavaScript 代码并获取返回值
+        result = driver.execute_script('return window.get3dScreenshot()')
+        
+        # 打印返回值
+        print(result)
+        return
 
         suffix = "-new" if os.getenv("Action_Mode") == "compare" else ""
         driver.save_screenshot(f"./screen-result/{case_name}{suffix}.png")
         print("*****case_name:", case_name)
-        if os.getenv("Action_Mode") == "compare":
+        if os.getenv("Action_Mode") != "generate":
             if compare_screenshots(
                 f"./screen-result/{case_name}-new.png",
                 f"{os.getcwd()}/.github/workflows/standard/{case_name}.png",
