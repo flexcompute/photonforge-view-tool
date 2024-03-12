@@ -57,10 +57,10 @@ def check_screenshot():
         driver.get(url)
         time.sleep(15)
 
-        # case_name = driver.find_element(
-        #     By.XPATH,
-        #     "/html/body/app-root/app-workbench/app-workbench-toolbar/div/app-input/input",
-        # ).get_attribute("value")
+        case_name = driver.find_element(
+            By.XPATH,
+            "/html/body/app-root/app-workbench/app-workbench-toolbar/div/app-input/input",
+        ).get_attribute("value")
         # helperElement = driver.find_element(By.XPATH, "/html/body/div")
         # driver.execute_script(
         #     "arguments[0].style.visibility = 'hidden';", helperElement
@@ -68,7 +68,7 @@ def check_screenshot():
 
         # 执行 JavaScript 代码并获取返回值
         result = driver.execute_script('return window.get3dScreenshot()')
-        print(result)
+        # print(result)
         # 解码 Base64 数据
         image_data = decode_base64(result)
         suffix = "-new" if os.getenv("Action_Mode") == "compare" else ""
