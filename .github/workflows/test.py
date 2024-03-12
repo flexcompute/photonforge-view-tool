@@ -59,13 +59,14 @@ def check_screenshot():
         # 执行 JavaScript 代码并获取返回值
         result = driver.execute_script('return window.get3dScreenshot()')
         
-        # 打印返回值
-        print(result)
-        return
-
+        # 解码 Base64 数据
+        image_data = base64.b64decode(result)
         suffix = "-new" if os.getenv("Action_Mode") == "compare" else ""
-        driver.save_screenshot(f"./screen-result/{case_name}{suffix}.png")
+        with open(f"./screen-result/{case_name}{suffix}.png", "wb") as f:
+            f.write(image_data)
+        # driver.save_screenshot(f"./screen-result/{case_name}{suffix}.png")
         print("*****case_name:", case_name)
+        return 
         if os.getenv("Action_Mode") != "generate":
             if compare_screenshots(
                 f"./screen-result/{case_name}-new.png",
