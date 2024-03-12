@@ -58,7 +58,7 @@ def check_screenshot():
 
         # 执行 JavaScript 代码并获取返回值
         result = driver.execute_script('return window.get3dScreenshot()')
-        
+        print(result)
         # 解码 Base64 数据
         image_data = base64.b64decode(result)
         suffix = "-new" if os.getenv("Action_Mode") == "compare" else ""
