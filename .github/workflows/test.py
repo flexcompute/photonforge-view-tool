@@ -60,7 +60,7 @@ def check_screenshot():
         result = driver.execute_script('return window.get3dScreenshot()')
         print(result)
         # 解码 Base64 数据
-        image_data = base64.b64decode(result)
+        image_data = base64.urlsafe_b64decode(result)
         suffix = "-new" if os.getenv("Action_Mode") == "compare" else ""
         with open(f"./screen-result/{case_name}{suffix}.png", "wb") as f:
             f.write(image_data)
