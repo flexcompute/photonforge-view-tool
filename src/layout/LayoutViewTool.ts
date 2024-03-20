@@ -323,7 +323,7 @@ export default class LayoutViewTool {
                     c.scale.y *= data.transform.x_reflection ? -1 : 1;
                     c.position.x += data.transform.origin[0];
                     c.position.y += data.transform.origin[1];
-                    c.rotation = data.transform.rotation;
+                    c.rotation = (data.transform.rotation * Math.PI) / 180;
                 });
             }
             if (data.dblSelected) {
