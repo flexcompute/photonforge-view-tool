@@ -40,7 +40,7 @@ def check_screenshot():
     driver.set_window_size(1280, 720)
 
     urls = [
-        "https://tidy3d.dev-simulation.cloud/workbench?taskId=pa-734c1c1d-e397-41f7-b0cd-f9f11e11be0c",  # Ring resonator
+        # "https://tidy3d.dev-simulation.cloud/workbench?taskId=pa-734c1c1d-e397-41f7-b0cd-f9f11e11be0c",  # Ring resonator
         # "https://tidy3d.dev-simulation.cloud/workbench?taskId=pa-7c1605ac-9d48-4ea2-be5e-356e376c9487",  # Photonic crystal cavity
         # "https://tidy3d.dev-simulation.cloud/workbench?taskId=pa-431bfe46-c1f4-49cb-9c3c-93ac15d34817",  # Edge coupler
         # "https://tidy3d.dev-simulation.cloud/workbench?taskId=pa-14f0dcad-b4fb-4c0c-91b0-a29361118c68",  # Directional coupler
@@ -76,7 +76,6 @@ def check_screenshot():
             f.write(image_data)
         # driver.save_screenshot(f"./screen-result/{case_name}{suffix}.png")
         print("*****case_name:", case_name)
-        return 
         if os.getenv("Action_Mode") != "generate":
             if compare_screenshots(
                 f"./screen-result/{case_name}-new.png",
