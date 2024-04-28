@@ -102,7 +102,7 @@ def check_screenshot():
 
     print("*****simulation-view:", {simulationViewWork})
     data = {
-        "msg": f"Scheduled Test Job: {error_count} / {len(urls)} cases error,  simulation-view {simulationViewWork}",
+        "msg": f"simulation-view {simulationViewWork}, Scheduled Test Job: {error_count} / {len(urls)} cases error",
         "link": f"https://github.com/flexcompute/photonforge-view-tool/actions/runs/{os.getenv('GITHUB_RUN_ID')}",
     }
     requests.post(
